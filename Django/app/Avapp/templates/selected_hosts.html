@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load my_filters %}
+
+{% block block-body-content %}
+{% load static %}
+<h1>Selected Hosts</h1>
+<form method="POST" action="{% url 'graph-view' %} " target="_blank" onsubmit="return validateForm();">
+    {% csrf_token %}
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <center>{{lenabundancefacts }} results founds. <br>
+                {% if lenabundancefacts %}
+                <input type="checkbox" id="select-all">
+                <label for="select-all">Select All</label></center>
+            <th></th>
+            <th>
+                <center>Id-host</center>
+            </th>
+            <th>
+                <center>tag</center>
+            </th>
+            <th>
+                <center>sex</center>
+            </th>
+            <th>
+                <center>ID-Sample</center>
+            </th>
+            <th>
+                <center>Sample Name</center>
+            </th>
+            <th>
+                <center>Abundance value</center>
+            </th>
+            <th>
+                <center>Item</center>
+            </th>
+            <th>
+                <center>TAX</center>
+            </th>
+            <th>
+                <center>Omics</center>
+            </th>
+        </tr>
+        {% endif %}
+
+        </thead>
+        <tbody>
+
+        {% for abd in abundancefacts %}
+        <tr>
+            <td><input type="checkbox" name="fields"
+                       value="{{ abd.sample_idsample.host_idhost.idhost }}::{{ abd.sample_idsample.host_idhost.tag }}::{{ abd.sample_idsample.host_idhost.sex }}::{{abd.sample_idsample.idsample }}::{{ abd.sample_idsample.samplename }}::{{ abd.abundance }}::{{ abd.item_iditem.itemname }}::{% for taxon in abd.item_iditem.taxons_set.all %}{{ taxon.taxonomy }}{% endfor %}">
+            </td>
+            <td>{{ abd.sample_idsample.host_idhost.idhost }}</td>
+            <td>{{ abd.sample_idsample.host_idhost.tag }}</td>
+            <td>{{ abd.sample_idsample.host_idhost.sex }}</td>
+            <td>
+                <center>{{ abd.sample_idsample.idsample }}</center>
+            </td>
+            <td>
+                <center>{{ abd.sample_idsample.samplename }}</center>
+            </td>
+            <td>
+                <center>{{ abd.abundance }}</center>
+            </td>
+            <td>
+                <center>{{ abd.item_iditem.itemname }}</center>
+            </td>
+            <!--                <div class="tax-cell">-->
+            <!--          <td><center>{% for taxon in abd.item_iditem.taxons_set.all %}-->
+            <!--                      <div class="taxonomy-line">{{ taxon.taxonomy|split_taxonomy|safe }}</div>-->
+            <!--              {% endfor %}</center></td></div>-->
+            <td style="position: relative; overflow: hidden;">
+                <center>
+
+                       <!-- &lt;!&ndash;                    --><div class="tax-cell">
+                        <!--(Pdb) tax-on = abundance_facts[0].item_iditem.taxons_set.all()
+                        (Pdb) taxon[0].taxonomy-->
+
+                        {% with unique_taxonomies=abd.item_iditem.taxons_set.all|remove_duplicates %}
+                        {% for taxon in unique_taxonomies %}
+                        {% if forloop.counter <= 1 %}
+                        {{ taxon.taxonomy|split_taxonomy|safe }}<br>
+                        {% endif %}
+                        {% endfor %}
+                        {% endwith %}
+                        <!--               {{ abd.item_iditem.itemname.taxons_set.all }}-->
+                    </div>
+                </center>
+            </td>
+
+            <td>
+                <center>{{ abd.omics_idomics.technology }}</center>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="btn-primary-viz">
+        <label for="visualization">Select the visualization:</label><br>
+        <select name="visualization" id="visualization"><br>
+            <option value="abdVSidsample">Abundance vs. ID Sample</option>
+            <option value="line">line</option>
+            <option value="bar">bar</option>
+            <option value="barplot">Total Abundance by Samplename and Sex</option>
+            <option value="AbundancebyTagandSampleName">Abundance by Tag and Sample Name</option>
+            <option value="violin">violin</option>
+            <!--<option>alue="hist">hist</option>-->
+            <option value="heatmap">heatmap</option>
+            <option value="barplotTax">barplotTax</option>
+
+        </select></div>
+    <div class="button-group">
+        <!-- Add a button to trigger the download -->
+        <button type="submit" name="action" value="download" class="btn-primary-download ">Download CSV</button>
+        <!-- Add a button to trigger the analysis -->
+        <button type="submit" class="btn btn-primary">Perform Analysis</button>
+    </div>
+
+</form>
+
+<script>
+    // Get the "select all" checkbox element
+var selectAllCheckbox = document.getElementById('select-all');
+
+// Get all the checkboxes in the form
+var checkboxes = document.querySelectorAll('input[type=checkbox]');
+
+// Add an event listener to the "select all" checkbox
+selectAllCheckbox.addEventListener('change', function() {
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+});
+
+function validateForm() {
+  var checkboxes = document.querySelectorAll('input[name="fields"]:checked');
+  if (checkboxes.length === 0) {
+    alert('Please check at least one entry.');
+    event.preventDefault(); // Prevent form submission
+  }
+}
+</script>
+
+
+<style>
+
+.tax-cell {
+  max-height: 1.2em; /* Adjust the height as needed */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  position: relative;
+   z-index: 1; /* Add a z-index to control the stacking order */
+}
+
+.tax-cell:hover {
+  max-height: none;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: initial;
+  z-index: 2; /* Make sure the hovered element is on top of other content */
+}
+</style>
+{% endblock %}

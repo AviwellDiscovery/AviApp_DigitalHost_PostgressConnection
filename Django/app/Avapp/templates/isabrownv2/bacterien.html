@@ -1,0 +1,850 @@
+  {% extends 'base.html' %}
+  {% load static %}
+  {% block block-body-content %}
+    <meta charset="UTF-8">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+    <!-- Plotly Library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <style>
+      /* Base Styles */
+      body, html {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        font-family: 'Montserrat', sans-serif;
+        background: #f0f0f0;
+      }
+      /* Larger interactive containers */
+      .choice-container, .interactive-container {
+        margin: 20px auto;
+        padding: 20px;
+        max-width: 90%;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        text-align: center;
+        transition: transform 0.3s;
+      }
+      .interactive-container:hover {
+        transform: scale(1.02);
+      }
+      /* Choice Buttons: side by side */
+      .choice-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 50px;
+        margin-top: 30px;
+      }
+      .choice-btn {
+        padding: 20px 40px;
+        font-size: 1.2em;
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        transition: background 0.3s, transform 0.2s;
+        color: #fff;
+      }
+      .choice-btn:hover {
+        transform: scale(1.03);
+        opacity: 0.95;
+      }
+      .btn-specific { background: #4CAF50; }
+      .btn-explore { background: #2196F3; }
+      /* Sections for workflows */
+      .section {
+        display: none;
+        background: inherit;
+        padding: 80px 20px 20px;
+        position: relative;
+      }
+      /* Increase size for table-containing sections */
+      #tableFilterSection,
+      #exploreFilterSection {
+        min-height: 800px;
+        padding-bottom: 200px;
+      }
+      /* Back buttons */
+      .back-btn, .back-btn-right {
+        position: fixed;
+        padding: 10px 20px;
+        background: linear-gradient(45deg, #32CD32, #FFD700);
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        z-index: 3000;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s, transform 0.2s;
+      }
+      .back-btn:hover, .back-btn-right:hover {
+        background: linear-gradient(45deg, #2E8B57, #FFC107);
+        transform: scale(1.05);
+      }
+      .back-btn { top: 10px; left: 10px; }
+      .back-btn-right { top: 10px; right: 10px; }
+      /* Animations */
+      @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      .slide-left { animation: slideInLeft 0.5s ease forwards; }
+      .slide-right { animation: slideInRight 0.5s ease forwards; }
+      @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 0; } }
+      @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+      .slide-out-left { animation: slideOutLeft 0.5s ease forwards; }
+      .slide-out-right { animation: slideOutRight 0.5s ease forwards; }
+      /* Table container */
+      #tableContainer { margin-top: 20px; overflow-x: auto; }
+      table.dataTable thead th { background: #eee;
+        white-space: normal;
+        word-wrap: break-word;
+        overflow: visible;
+        text-overflow: clip;
+      }
+      /* Spinner styling */
+      #spinner {
+        display: none;
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 5000;
+      }
+      .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border: 0.25em solid #ccc;
+        border-top-color: #1d70b8;
+        border-radius: 50%;
+        animation: spin 0.75s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      /* Plotly sunburst container */
+      .sunburst-container {
+        width: 100%;
+        max-width: 700px;
+        height: 700px;
+        margin: 0 auto;
+      }
+      .mt-5 { margin-top: 3rem; }
+      /* Overview statistics styling */
+      #tableOverview, #exploreTableOverview {
+        margin-bottom: 20px;
+        background: #e9f5ee;
+        border: 1px solid #c7e4d4;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 1.1em;
+      }
+      /* Allow text wrapping in table cells */
+      table.dataTable td {
+        white-space: normal;
+        word-wrap: break-word;
+      }
+      /* Force header cells to remain on one line */
+      table.dataTable thead th {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* Ensure the table fits within its container */
+      table.dataTable {
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      .dataTables_wrapper {
+        width: 100% !important;
+        box-sizing: border-box;
+      }
+      /* Explore Data button special style */
+.explore-btn {
+  min-width: unset;              /* override fixed min-width */
+  padding: 12px 28px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4ade80, #22c55e); /* green gradient */
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.explore-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(16, 185, 129, 0.45);
+}
+
+.explore-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 12px rgba(16, 185, 129, 0.4) inset;
+}
+
+.explore-btn:focus-visible {
+  outline: 3px solid #bbf7d0; /* light green ring */
+  outline-offset: 3px;
+}
+    </style>
+
+    <!-- Spinner -->
+    <div id="spinner">
+      <div class="spinner-border"></div>
+    </div>
+
+    <!-- Choice Screen -->
+    <div id="choiceContainer" class="choice-container interactive-container">
+      <h1>Welcome to the Avi-diversity Section<br>Do you have a query?</h1><br>
+      <div class="choice-buttons">
+        <button id="btnSpecific" class="choice-btn btn-specific">YES, I have a specific query</button>
+        <button id="btnExplore" class="choice-btn btn-explore">I just want to Explore</button>
+      </div>
+      <div class="container mt-5 text-center">
+        <br>
+        <a href="{% url 'isabrown_detailv2' %}" class="btn btn-secondary modern-btn">Back to Omic Selection</a>
+      </div>
+    </div>
+
+    <!-- Specific Query Section -->
+    <div id="sunburstSection" class="section interactive-container">
+      <button class="back-btn" id="backFromSunburst">Back</button>
+      <!-- Bacteria Variable Input -->
+      <div id="searchBox" class="interactive-container">
+        <label for="bacteriaSearch" style="font-size: 1.2em;">Search or select your bacteria variable:</label><br>
+        <input type="text" id="bacteriaSearch" name="bacteriaSearch" autocomplete="off" list="otuList"
+               placeholder="e.g. s__Thermophilibacter_avistercoris_otu"
+               style="padding: 10px; width: 300px; margin-top: 10px; font-size: 1em;">
+        <datalist id="otuList">
+          {% for otu in otu_list %}
+            <option value="{{ otu }}"></option>
+          {% endfor %}
+        </datalist>
+      </div>
+
+      <!-- Tissue (Omics) Selection -->
+      <div id="omicsChoiceContainer" class="interactive-container" style="display: none;">
+        <label for="omicsChoice" style="font-size: 1.2em;">You can choose the Omics you're interested in matching your variable with:</label><br>
+        <select id="omicsChoice" name="omicsChoice" style="padding: 10px; width: 300px; margin-top: 10px; font-size: 1em;">
+          <option value="" disabled selected>--Select the Omic--</option>
+          {% for tissue in tissue_types %}
+            <option value="{{ tissue }}">{{ tissue }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Cluster Lookup Button -->
+      <div id="clusterLookupContainer" class="interactive-container" style="display: none;">
+        <label for="omicsChoice" style="font-size: 1.2em;">Click below to check if your bacteria appear in our clusters</label><br>
+        <button id="clusterLookupButton" style="padding: 10px 20px; font-size: 1em;">Check Cluster</button>
+      </div>
+
+      <!-- Cluster Lookup Result -->
+      <div id="clusterResult" class="interactive-container" style="font-size: 1.2em;"></div>
+
+      <!-- Sunburst Toggle Button -->
+      <div id="toggleSunburstContainer" class="interactive-container" style="display: none;">
+        <label for="omicsChoice" style="font-size: 1.2em;">Click below to get access to the sunburst cluster</label><br>
+        <button id="toggleSunburstButton" style="padding: 10px 20px; font-size: 1em;">Toggle Sunburst</button>
+      </div>
+
+      <!-- Plotly Sunburst View -->
+      <div id="plotlySunburstView" style="display: none;">
+        <div class="interactive-container">
+          <h2>Sunburst Mofa CC</h2>
+          <!-- Threshold slider -->
+          <div class="interactive-container">
+            <label>Threshold:</label>
+            <input type="range" id="threshold_slider" min="0.4" max="0.6" step="0.1" value="0.6" style="width:200px;">
+            <span id="threshold_value">0.6</span>
+          </div>
+          <!-- Sunburst for Threshold 0.6 -->
+          <div id="sunburst_container_0_6" class="sunburst-container">
+            {{ sunburst_html_0_6|safe }}
+          </div>
+          <!-- Sunburst for Threshold 0.5 -->
+          <div id="sunburst_container_0_5" class="sunburst-container" style="display: none;">
+            {{ sunburst_html_0_5|safe }}
+          </div>
+          <div id="sunburst_container_0_4" class="sunburst-container" style="display: none;">
+            {{ sunburst_html_0_4|safe }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Filter Section for Specific Query -->
+      <div id="tableFilterSection" class="interactive-container" style="display: none;">
+        <h3>Optimize Your Data Display</h3>
+        <!-- Overview Statistics -->
+        <div id="tableOverview" style="display: none;">
+          <h4>Overview Statistics</h4>
+          <p id="overviewStats"></p>
+        </div>
+        <!-- Info for how many results are found -->
+        <div id="specificResultsInfo" style="margin-bottom: 10px; font-weight: bold;"></div>
+        <div style="text-align: center;">
+          <label>Coefficient Range:</label>
+          <input type="number" id="corrMin" value="-1" step="0.1" style="width:70px;">
+          to
+          <input type="number" id="corrMax" value="1" step="0.1" style="width:70px;">
+          <br><br>
+          <label>Minimum Accuracy:</label>
+          <input type="number" id="minAccuracy" value="0" step="0.0001" style="width:70px;">
+          <br><br>
+          <button id="filterTableButton" title="Click each time you select a different variable" style="padding: 10px 20px; font-size:1em;">Explore Data</button>
+        </div>
+        <div id="tableContainer" style="margin-top: 20px;">
+          <table id="resultsTable" class="display" style="width:100%; margin:0 auto;">
+            <thead>
+              <tr>
+                 <th title="Selected omic category, Predicted variable">Selected Omic</th>
+                <th title="Variable chosen by the user for analysis">Selected Bacterium</th>
+                <th title="Correlation coefficient ">Coeff</th>
+                <th title="Minimum value of the coefficient set">MinCoeff</th>
+                <th title="Maximum value of the coefficient set">MaxCoeff</th>
+                <th title="Overall rate of correct predictions by the model">Accuracy</th>
+                <th title="P-value of the coefficient">Pvalue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated via AJAX -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Explore Section -->
+    <div id="exploreSection" class="section interactive-container">
+      <button class="back-btn-right" id="backFromFullInterface">Back</button>
+      <!-- Explore Sunburst and Content -->
+      <div id="explore_plotlySunburstView">
+        <div class="interactive-container">
+          <h2>Sunburst Mofa CC</h2>
+          <!-- Threshold slider for Explore Sunburst -->
+          <div class="interactive-container">
+            <label>Threshold:</label>
+            <input type="range" id="explore_threshold_slider" min="0.4" max="0.6" step="0.1" value="0.6" style="width:200px;">
+            <span id="explore_threshold_value">0.6</span>
+          </div>
+          <!-- Explore Sunburst for Threshold 0.6 -->
+          <div id="explore_sunburst_container_0_6" class="sunburst-container">
+            {{ explore_sunburst_html_0_6|safe }}
+          </div>
+          <!-- Explore Sunburst for Threshold 0.5 -->
+          <div id="explore_sunburst_container_0_5" class="sunburst-container" style="display: none;">
+            {{ explore_sunburst_html_0_5|safe }}
+          </div>
+          <!-- Explore Sunburst for Threshold 0.4 -->
+          <div id="explore_sunburst_container_0_4" class="sunburst-container" style="display: none;">
+            {{ explore_sunburst_html_0_4|safe }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tissue Selection for Explore -->
+      <div id="exploreTissueSelection" class="interactive-container" style="margin-top: 20px;">
+        <h3>Step 1: Select the Omic interested in matching with Bacteria omic</h3>
+        <label for="exploreTissueChoice">Choose the omic:</label><br>
+        <select id="exploreTissueChoice" name="exploreTissueChoice" style="padding:10px; width:300px; margin-top:10px; font-size:1em;">
+          <option value="" disabled selected>--Select Omic--</option>
+          {% for tissue in tissue_types %}
+            <option value="{{ tissue }}">{{ tissue }}</option>
+          {% endfor %}
+        </select>
+        <button id="exploreLoadData" style="padding:10px 20px; font-size:1em; margin-left:10px;">Load Data</button>
+      </div>
+
+      <!-- Correlation Distribution for Explore -->
+      <div id="exploreCorrelationDistribution" class="interactive-container" style="display: none; margin-top: 20px;">
+        <h3>Step 2: Coefficient Distribution</h3>
+        <div id="correlationHistogram" style="width:100%; height:400px;"></div>
+      </div>
+
+      <!-- Filter and Table for Explore -->
+      <div id="exploreFilterSection" class="interactive-container" style="display: none; margin-top: 20px;">
+        <h3>Step 3: Filter and Explore Data</h3>
+        <!-- Overview Statistics for Explore -->
+        <div id="exploreTableOverview">
+          <h4>Overview Statistics</h4>
+          <p id="exploreOverviewStats"></p>
+        </div>
+        <!-- Info for how many results are found -->
+        <div id="exploreResultsInfo" style="margin-bottom: 10px; font-weight: bold;"></div>
+        <div style="text-align: center;">
+          <label>Coefficient Range:</label>
+          <input type="number" id="exploreCorrMin" value="-1" step="0.1" style="width:70px;">
+          to
+          <input type="number" id="exploreCorrMax" value="1" step="0.1" style="width:70px;">
+          <br><br>
+          <label>Minimum Accuracy:</label>
+          <input type="number" id="exploreMinAccuracy" value="0" step="0.0001" style="width:70px;">
+          <br><br>
+          <button id="exploreFilterButton" title="Click each time you select a different tissu" style="padding:10px 20px; font-size:1em;">Explore Data</button>
+        </div>
+        <div id="exploreTableContainer" style="margin-top: 20px;">
+          <table id="exploreResultsTable" class="display" style="width:100%; margin:0 auto;">
+            <thead>
+              <tr>
+                 <th title="Selected omic category, Predicted variable">Selected Omic</th>
+                <th title="Full Bacterium variable">Full Bacterium</th>
+                <th title="Correlation coefficient ">Coeff</th>
+                <th title="Minimum value of the coefficient set">MinCoeff</th>
+                <th title="Maximum value of the coefficient set">MaxCoeff</th>
+                <th title="Overall rate of correct predictions by the model">Accuracy</th>
+                <th title="P-value of the coefficient">Pvalue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated via AJAX -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Include jQuery, DataTables, and Plotly JS -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <script>
+      // On load: Clear inputs and hide sections.
+      window.onload = function() {
+        document.getElementById("bacteriaSearch").value = "";
+        document.getElementById("omicsChoice").selectedIndex = 0;
+        document.getElementById("corrMin").value = "-1";
+        document.getElementById("corrMax").value = "1";
+        document.getElementById("minAccuracy").value = "0";
+        document.getElementById("clusterResult").innerHTML = "";
+        document.getElementById("toggleSunburstContainer").style.display = "none";
+        document.getElementById("tableFilterSection").style.display = "none";
+        $("#resultsTable tbody").html("");
+        document.getElementById("plotlySunburstView").style.display = "none";
+        document.getElementById("tableOverview").style.display = "none";
+      };
+
+      // Navigation handling + animations.
+      const choiceContainer = document.getElementById("choiceContainer");
+      const sunburstSection = document.getElementById("sunburstSection");
+      const exploreSection = document.getElementById("exploreSection");
+      const btnSpecific = document.getElementById("btnSpecific");
+      const btnExplore = document.getElementById("btnExplore");
+      const backFromSunburst = document.getElementById("backFromSunburst");
+      const backFromFullInterface = document.getElementById("backFromFullInterface");
+
+      btnSpecific.addEventListener("click", function() {
+        choiceContainer.classList.add("slide-out-left");
+        setTimeout(() => {
+          choiceContainer.style.display = "none";
+          choiceContainer.classList.remove("slide-out-left");
+          sunburstSection.style.display = "block";
+          sunburstSection.classList.add("slide-left");
+        }, 500);
+      });
+
+      btnExplore.addEventListener("click", function() {
+        choiceContainer.classList.add("slide-out-right");
+        setTimeout(() => {
+          choiceContainer.style.display = "none";
+          choiceContainer.classList.remove("slide-out-right");
+          exploreSection.style.display = "block";
+          exploreSection.classList.add("slide-right");
+        }, 500);
+      });
+
+      backFromSunburst.addEventListener("click", function() {
+        sunburstSection.classList.add("slide-out-left");
+        setTimeout(() => {
+          sunburstSection.style.display = "none";
+          sunburstSection.classList.remove("slide-out-left");
+          choiceContainer.style.display = "flex";
+          choiceContainer.style.flexDirection = "column";
+          choiceContainer.classList.add("slide-left");
+          setTimeout(() => { choiceContainer.classList.remove("slide-left"); }, 500);
+        }, 500);
+      });
+
+      backFromFullInterface.addEventListener("click", function() {
+        exploreSection.classList.add("slide-out-right");
+        setTimeout(() => {
+          exploreSection.style.display = "none";
+          exploreSection.classList.remove("slide-out-right");
+          choiceContainer.style.display = "flex";
+          choiceContainer.style.flexDirection = "column";
+          choiceContainer.classList.add("slide-right");
+          setTimeout(() => { choiceContainer.classList.remove("slide-right"); }, 500);
+        }, 500);
+      });
+
+      const omicsChoice = document.getElementById("omicsChoice");
+      const bacteriaSearch = document.getElementById("bacteriaSearch");
+      const omicsChoiceContainer = document.getElementById("omicsChoiceContainer");
+      bacteriaSearch.addEventListener("input", function() {
+        if (bacteriaSearch.value.trim() !== "") {
+          omicsChoiceContainer.style.display = "block";
+          if (omicsChoice.value.trim() !== "") {
+            document.getElementById("clusterLookupContainer").style.display = "block";
+            document.getElementById("toggleSunburstContainer").style.display = "block";
+            document.getElementById("tableFilterSection").style.display = "block";
+          }
+        } else {
+          omicsChoiceContainer.style.display = "none";
+          document.getElementById("clusterLookupContainer").style.display = "none";
+          document.getElementById("clusterResult").innerHTML = "";
+          document.getElementById("toggleSunburstContainer").style.display = "none";
+          document.getElementById("tableFilterSection").style.display = "none";
+        }
+      });
+
+      omicsChoice.addEventListener("change", function() {
+        if (omicsChoice.value.trim() !== "") {
+          document.getElementById("clusterLookupContainer").style.display = "block";
+          document.getElementById("toggleSunburstContainer").style.display = "block";
+          document.getElementById("tableFilterSection").style.display = "block";
+        } else {
+          document.getElementById("clusterLookupContainer").style.display = "none";
+          document.getElementById("toggleSunburstContainer").style.display = "none";
+          document.getElementById("tableFilterSection").style.display = "none";
+        }
+      });
+
+      const clusterLookupButton = document.getElementById("clusterLookupButton");
+      const clusterResult = document.getElementById("clusterResult");
+      const toggleSunburstContainer = document.getElementById("toggleSunburstContainer");
+      clusterLookupButton.addEventListener("click", function() {
+        const bacteria = bacteriaSearch.value.trim();
+        if (!bacteria) {
+          alert("Please enter a bacteria variable.");
+          return;
+        }
+        fetch(window.location.pathname + `?cluster_lookup=1&bacteria=${encodeURIComponent(bacteria)}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.found) {
+            clusterResult.innerHTML = `<b>Your bacteria was successfully identified within our cluster using a threshold of ${data.threshold}.</b><br>
+                                        <b>Review the cluster members:</b> ${data.cluster_members.join(', ')}`;
+          } else {
+            clusterResult.innerHTML = "Bacteria not found in any cluster.";
+          }
+          toggleSunburstContainer.style.display = "block";
+          document.getElementById("tableFilterSection").style.display = "block";
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          clusterResult.innerHTML = "An error occurred.";
+        });
+      });
+
+      const toggleSunburstButton = document.getElementById("toggleSunburstButton");
+      const plotlySunburstView = document.getElementById("plotlySunburstView");
+      toggleSunburstButton.addEventListener("click", function() {
+        if (plotlySunburstView.style.display === "none" || plotlySunburstView.style.display === "") {
+          plotlySunburstView.style.display = "block";
+        } else {
+          plotlySunburstView.style.display = "none";
+        }
+      });
+
+      // Table filter AJAX call for Specific Query.
+      let resultsTable;
+      const filterTableButton = document.getElementById("filterTableButton");
+      filterTableButton.addEventListener("click", function() {
+        $("#spinner").show();
+        const tissue = document.getElementById("omicsChoice").value;
+        const variable = document.getElementById("bacteriaSearch").value.trim();
+        const minCorr = document.getElementById("corrMin").value;
+        const maxCorr = document.getElementById("corrMax").value;
+        const accuracyInput = document.getElementById("minAccuracy").value.trim();
+        const accuracy = isNaN(parseFloat(accuracyInput)) ? 0 : parseFloat(accuracyInput);
+        const url = window.location.pathname + `?table_filter=1&tissue=${encodeURIComponent(tissue)}`
+                   + `&variable=${encodeURIComponent(variable)}&correlation_min=${minCorr}`
+                   + `&correlation_max=${maxCorr}&accuracy=${accuracy}`;
+        fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then(response => response.json())
+        .then(data => {
+          $("#spinner").hide();
+          if (data.error) {
+            alert(data.error);
+            return;
+          }
+          const totalCount = data.total_count ?? data.results.length;
+          const shownCount = data.results.length;
+          specificResultsInfo.innerHTML = `Found <b>${totalCount}</b> total results, showing <b>${shownCount}</b>.`;
+          // IMPORTANT: use "Coefficient" (with capital C) from the server response.
+          const newData = data.results.map(item => [
+            item.var1,
+            item.var2,
+            item.Coefficient,
+            item.min_val,
+            item.max_val,
+            item.accuracy,
+            item.pvalue
+          ]);
+          if (resultsTable) {
+            resultsTable.clear().rows.add(newData).draw();
+          } else {
+            resultsTable = $("#resultsTable").DataTable({
+              data: newData,
+              columns: [
+                { title: "Selected Omic", width: "150px" },
+                { title: "Selected Bacteria", width: "190px" },
+                { title: "Coeff", width: "60px" },
+                { title: "MinCoeff", width: "80px" },
+                { title: "MaxCoeff", width: "80px" },
+                { title: "Accuracy", width: "80px" },
+                { title: "Pvalue", width: "70px" }
+              ],
+              pageLength: 100,
+              order: [[2, "desc"]],
+              autoWidth: false,
+              dom: '<"top"pBf>rt<"bottom"lip><"clear">',
+              buttons: [{
+                extend: 'csvHtml5',
+                title: 'Filtered_Results',
+                exportOptions: { columns: ':visible' }
+              }]
+            });
+          }
+          if (data.overview && data.overview.median !== null) {
+            document.getElementById("overviewStats").innerHTML =
+              `Median: ${data.overview.median.toFixed(4)} | Q1: ${data.overview.q1.toFixed(4)} | Q3: ${data.overview.q3.toFixed(4)}`;
+            document.getElementById("tableOverview").style.display = "block";
+          } else {
+            document.getElementById("tableOverview").style.display = "none";
+          }
+        })
+        .catch(error => {
+          $("#spinner").hide();
+          console.error("Error:", error);
+          alert("An error occurred while filtering the table.");
+        });
+      });
+
+      // Plotly sunburst slider controls for Specific Query.
+      const thresholdSlider = document.getElementById('threshold_slider');
+      const thresholdValue = document.getElementById('threshold_value');
+      const sbCont06 = document.getElementById('sunburst_container_0_6');
+      const sbCont05 = document.getElementById('sunburst_container_0_5');
+      const sbCont04 = document.getElementById('sunburst_container_0_4');
+      thresholdSlider.addEventListener('input', () => {
+        thresholdValue.textContent = thresholdSlider.value;
+        if (thresholdSlider.value === "0.6") {
+          sbCont06.style.display = 'block';
+          sbCont05.style.display = 'none';
+          sbCont04.style.display = 'none';
+        } else if (thresholdSlider.value === "0.5") {
+          sbCont06.style.display = 'none';
+          sbCont05.style.display = 'block';
+          sbCont04.style.display = 'none';
+        } else if (thresholdSlider.value === "0.4") {
+          sbCont06.style.display = 'none';
+          sbCont05.style.display = 'none';
+          sbCont04.style.display = 'block';
+        }
+      });
+
+      // Plotly sunburst slider controls for Explore Section.
+      const explore_thresholdSlider = document.getElementById('explore_threshold_slider');
+      const explore_thresholdValue = document.getElementById('explore_threshold_value');
+      const explore_sbCont06 = document.getElementById('explore_sunburst_container_0_6');
+      const explore_sbCont05 = document.getElementById('explore_sunburst_container_0_5');
+      const explore_sbCont04 = document.getElementById('explore_sunburst_container_0_4');
+      explore_thresholdSlider.addEventListener('input', () => {
+        explore_thresholdValue.textContent = explore_thresholdSlider.value;
+        if (explore_thresholdSlider.value === "0.6") {
+          explore_sbCont06.style.display = 'block';
+          explore_sbCont05.style.display = 'none';
+          explore_sbCont04.style.display = 'none';
+        } else if (explore_thresholdSlider.value === "0.5") {
+          explore_sbCont06.style.display = 'none';
+          explore_sbCont05.style.display = 'block';
+          explore_sbCont04.style.display = 'none';
+        } else if (explore_thresholdSlider.value === "0.4") {
+          explore_sbCont06.style.display = 'none';
+          explore_sbCont05.style.display = 'none';
+          explore_sbCont04.style.display = 'block';
+        }
+      });
+   // Plotly click handlers (so clicking a label opens NCBI in a new tab)
+      const sbDiv06 = document.getElementById("sunburst_06");
+      const sbDiv05 = document.getElementById("sunburst_05");
+      const sbDiv04 = document.getElementById("sunburst_04");
+
+      const explore_sbDiv04 = document.getElementById("explore_sunburst_04");
+      const explore_sbDiv05 = document.getElementById("explore_sunburst_05");
+      const explore_sbDiv06 = document.getElementById("explore_sunburst_06");
+
+      if (sbDiv04 && sbDiv04.on) {
+        sbDiv04.on("plotly_click", function(data) {
+          if (!data.points || !data.points.length) return;
+          const pt = data.points[0];
+          const label = pt.label;
+          if (label && label.startsWith("Cluster")) return;
+          window.open("https://www.ncbi.nlm.nih.gov/search/all/?term=" + encodeURIComponent(label), "_blank");
+        });
+      }
+
+      if (explore_sbDiv04 && explore_sbDiv04.on) {
+        explore_sbDiv04.on("plotly_click", function(data) {
+          if (!data.points || !data.points.length) return;
+          const pt = data.points[0];
+          const label = pt.label;
+          if (label && label.startsWith("Cluster")) return;
+          window.open("https://www.ncbi.nlm.nih.gov/search/all/?term=" + encodeURIComponent(label), "_blank");
+        });
+      }
+
+      if (sbDiv06 && sbDiv06.on) {
+        sbDiv06.on("plotly_click", function(data) {
+          if (!data.points || !data.points.length) return;
+          const pt = data.points[0];
+          const label = pt.label;
+          if (label && label.startsWith("Cluster")) return;
+          window.open("https://www.ncbi.nlm.nih.gov/search/all/?term=" + encodeURIComponent(label), "_blank");
+        });
+      }
+      if (sbDiv05 && sbDiv05.on) {
+        sbDiv05.on("plotly_click", function(data) {
+          if (!data.points || !data.points.length) return;
+          const pt = data.points[0];
+          const label = pt.label;
+          if (label && label.startsWith("Cluster")) return;
+          window.open("https://www.ncbi.nlm.nih.gov/search/all/?term=" + encodeURIComponent(label), "_blank");
+        });
+      }
+      if (explore_sbDiv05 && explore_sbDiv05.on) {
+        explore_sbDiv05.on("plotly_click", function(data) {
+          if (!data.points || !data.points.length) return;
+          const pt = data.points[0];
+          const label = pt.label;
+          if (label && label.startsWith("Cluster")) return;
+          window.open("https://www.ncbi.nlm.nih.gov/search/all/?term=" + encodeURIComponent(label), "_blank");
+        });
+      }
+      if (explore_sbDiv06 && explore_sbDiv06.on) {
+        explore_sbDiv06.on("plotly_click", function(data) {
+          if (!data.points || !data.points.length) return;
+          const pt = data.points[0];
+          const label = pt.label;
+          if (label && label.startsWith("Cluster")) return;
+          window.open("https://www.ncbi.nlm.nih.gov/search/all/?term=" + encodeURIComponent(label), "_blank");
+        });
+      }
+      // Explore section AJAX: Load Data (Correlation Distribution)
+      const exploreLoadDataBtn = document.getElementById("exploreLoadData");
+      const exploreCorrelationDistribution = document.getElementById("exploreCorrelationDistribution");
+      const exploreFilterSection = document.getElementById("exploreFilterSection");
+      exploreLoadDataBtn.addEventListener("click", function () {
+        const tissue = document.getElementById("exploreTissueChoice").value;
+        $("#spinner").show();
+        fetch(window.location.pathname + `?explore_distribution=1&tissue=${encodeURIComponent(tissue)}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(response => response.json())
+        .then(data => {
+          $("#spinner").hide();
+          if (!data.distribution || !data.distribution.correlation_values) {
+            console.error("Invalid response format:", data);
+            alert("Server returned unexpected data format.");
+            return;
+          }
+          const histogramData = [{
+            x: data.distribution.correlation_values,
+            type: "histogram",
+            marker: { color: "#2196F3" }
+          }];
+          Plotly.newPlot("correlationHistogram", histogramData, {
+            title: "Coefficient Distribution",
+            xaxis: { title: "Coefficient Value" },
+            yaxis: { title: "Count" }
+          });
+          exploreCorrelationDistribution.style.display = "block";
+          exploreFilterSection.style.display = "block";
+        })
+        .catch(error => {
+          $("#spinner").hide();
+          console.error("Error:", error);
+          alert("Failed to load data.");
+        });
+      });
+
+      // Explore section AJAX: Filter and Table Data.
+      let exploreResultsTable;
+      const exploreFilterButton = document.getElementById("exploreFilterButton");
+      const exploreResultsInfo = document.getElementById("exploreResultsInfo");
+      const exploreOverviewStats = document.getElementById("exploreOverviewStats");
+      exploreFilterButton.addEventListener("click", function () {
+        const tissue = document.getElementById("exploreTissueChoice").value;
+        const minCorr = document.getElementById("exploreCorrMin").value;
+        const maxCorr = document.getElementById("exploreCorrMax").value;
+        const minAccuracy = document.getElementById("exploreMinAccuracy").value;
+        $("#spinner").show();
+        const url = window.location.pathname
+          + `?explore_table_filter=1&tissue=${encodeURIComponent(tissue)}`
+          + `&corrMin=${minCorr}&corrMax=${maxCorr}&accuracy=${minAccuracy}`;
+        fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then(response => response.json())
+        .then(data => {
+          $("#spinner").hide();
+          if (!data.results) {
+            console.error("Invalid response format:", data);
+            alert("Server returned unexpected data format.");
+            return;
+          }
+          const totalCount = data.total_count ?? data.results.length;
+          const shownCount = data.shown_count ?? data.results.length;
+          exploreResultsInfo.innerHTML = `Found <b>${totalCount}</b> total results, showing <b>${shownCount}</b>.`;
+          const newData = data.results.map(item => [
+            item.var1,
+            item.var2,
+            item.correlation,
+            item.min_val,
+            item.max_val,
+            item.accuracy,
+            item.pvalue
+          ]);
+          if (exploreResultsTable) {
+            exploreResultsTable.clear().rows.add(newData).draw();
+          } else {
+            exploreResultsTable = $("#exploreResultsTable").DataTable({
+              data: newData,
+              columns: [
+                { title: "Selected Omic", width: "150px" },
+                { title: "Full Bacterium", width: "190px" },
+                { title: "Coeff", width: "60px" },
+                { title: "MinCoeff", width: "80px" },
+                { title: "MaxCoeff", width: "80px" },
+                { title: "Accuracy", width: "80px" },
+                { title: "Pvalue", width: "70px" }
+              ],
+              pageLength: 100,
+              order: [[2, "desc"]],
+              autoWidth: false,
+              dom: '<"top"pBf>rt<"bottom"lip><"clear">',
+              buttons: [{
+                extend: 'csvHtml5',
+                title: 'Filtered_Results',
+                exportOptions: { columns: ':visible' }
+              }]
+            });
+          }
+          if (data.overview && data.overview.median !== null) {
+            exploreOverviewStats.innerHTML =
+              `Median: ${data.overview.median.toFixed(4)} | Q1: ${data.overview.q1.toFixed(4)} | Q3: ${data.overview.q3.toFixed(4)}`;
+          } else {
+            exploreOverviewStats.innerHTML = "";
+          }
+        })
+        .catch(error => {
+          $("#spinner").hide();
+          console.error("Error:", error);
+          alert("Failed to filter data.");
+        });
+      });
+    </script>
+  {% endblock %}

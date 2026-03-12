@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+{% block block-body-content %}
+{% load static %}
+<title>DigitalHost</title>
+
+<!-- Hero styles (match the other pages) -->
+<style>
+  .hero-wrap{
+    margin-top: 2.5rem;
+    margin-bottom: 1.25rem;
+    text-align:center;
+  }
+  .hero-title{
+    margin: 0 0 .25rem 0;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: 0;
+    font-size: clamp(1.9rem, 1.9vw + 1rem, 2.6rem);
+    color: #1f2937;
+    font-family: 'Montserrat', sans-serif;
+  }
+  .hero-title .brand{ color:#1f2937; }
+  .hero-title .pill{
+    display:inline-block; margin-left:.45rem; padding:.22em .70em;
+    border-radius:999px;
+    background: linear-gradient(90deg,#a7f3d0,#93c5fd);
+    color:#0f172a; font-weight:800; white-space:nowrap;
+    box-shadow:0 4px 12px rgba(15,23,42,.10);
+  }
+  .hero-title .tagline{
+    display:block; margin-top:.65rem;
+    font-weight:600;
+    font-size:clamp(1.05rem, 1vw + .85rem, 1.35rem);
+    color:#334155;
+  }
+  .hero-accent{
+    width: 74px; height: 4px; margin: .85rem auto 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg,#a7f3d0,#bfdbfe);
+    opacity: .95;
+  }
+</style>
+
+<div class="container mt-5">
+
+  <!-- Hero Header (replaces the two plain lines) -->
+  <div class="hero-wrap">
+    <h1 class="hero-title">
+      <span class="brand">Welcome to</span>
+      <span class="pill">AVI-DigitalHost</span>
+      <span class="tagline">Select the host animal to start exploring the data and insights.</span>
+    </h1>
+    <div class="hero-accent"></div>
+  </div>
+
+  <div class="row text-center mt-4">
+    <!-- Chicken Card (has clickable IsaBrown and a disabled Ross button) -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100 position-relative">
+        <div class="image-container position-relative">
+          <img src="{% static 'Avapp/images/chicken1.png' %}" class="card-img-top grey-img" alt="Chicken">
+          <div class="hover-options">
+            <a href="{% url 'ross_detailv2' %}" class="btn btn-light btn-lg mx-3 shadow-lg">ROSS708</a>
+            <a href="{% url 'isabrown_detailv2' %}" class="btn btn-light btn-lg mx-3 shadow-lg">IsaBrown</a>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Chicken</h5>
+          <p class="card-text">Explore data and analysis for chickens.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trout Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/trout.png' %}" class="card-img-top grey-img" alt="Trout">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Trout</h5>
+          <p class="card-text">Dive into the insights for trout data.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Salmon Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/saumon1.png' %}" class="card-img-top grey-img" alt="Salmon">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Salmon</h5>
+          <p class="card-text">View the salmon data analysis options.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Black Fly Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/mouche.png' %}" class="card-img-top grey-img" alt="Black Fly">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Black Fly</h5>
+          <p class="card-text">View the Avi-black fly data analysis options.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Human Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/humain.png' %}" class="card-img-top grey-img" alt="Human">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Human</h5>
+          <p class="card-text">View the human data analysis options.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shrimp Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/crevette.png' %}" class="card-img-top grey-img" alt="Shrimp">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Shrimp</h5>
+          <p class="card-text">View the Avi-shrimp data analysis options.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Danio rerio Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/danio.png' %}" class="card-img-top grey-img" alt="Danio rerio">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Danio rerio</h5>
+          <p class="card-text">View the Avi-Danio rerio data analysis options.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mice Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/mice.png' %}" class="card-img-top grey-img" alt="Mice">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Mousse</h5>
+          <p class="card-text">View the Avi-mice data analysis options.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rat Card -->
+    <div class="col-md-4 col-sm-6 col-12 mb-4">
+      <div class="card h-100">
+        <div class="image-container position-relative coming-soon-image">
+          <img src="{% static 'Avapp/images/rat.png' %}" class="card-img-top grey-img" alt="Rat">
+          <div class="hover-options">
+            <span class="hover-message">Coming Soon!</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Rat</h5>
+          <p class="card-text">View the Avi-Rat data analysis options.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* (your existing card styles kept as-is) */
+
+/* General Card Styling */
+.card {
+  transition: transform 0.3s ease-in-out;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative;
+}
+.card:hover { transform: scale(1.05); }
+
+/* Image Styling */
+.card-img-top {
+  transition: filter .4s ease-in-out, box-shadow .3s ease-in-out;
+  border-bottom: 1px solid #ddd;
+  filter: grayscale(100%);
+}
+
+/* Standard hover effect (Chicken card) */
+.image-container:hover .card-img-top {
+  filter: grayscale(0%);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* For Coming Soon cards - darken image on hover */
+.coming-soon-image:hover .card-img-top {
+  filter: grayscale(0%) brightness(0.7);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Hover Options */
+.hover-options {
+  position: absolute; top: 75%; left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  display: flex; justify-content: center; align-items: center; gap: 30px;
+  transition: opacity 0.4s ease-in-out;
+}
+.image-container:hover .hover-options { opacity: 1; }
+
+/* Button Styling for clickable links */
+.hover-options .btn {
+  border-radius: 30px; font-weight: bold; padding: 12px 24px; font-size: 18px;
+  transition: all 0.3s ease-in-out;
+  background-color: rgba(255, 255, 255, 0.9); color: #000; border: 1px solid #ddd;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+.hover-options .btn:hover {
+  background-color: #007bff; color: #fff; border-color: #0056b3;
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Hover message for disabled cards */
+.hover-message {
+  font-size: 20px; font-weight: bold; background-color: rgba(255, 255, 255, 0.9);
+  padding: 10px 20px; border-radius: 30px; color: #000; border: 1px solid #ddd;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Disabled button (kept if you re-enable it) */
+.disabled-button { pointer-events: none; opacity: .6; position: relative; }
+.disabled-button:hover::after {
+  content:"Coming Soon!"; position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background-color: rgba(255,255,255,.7); color:#000; font-size:16px; font-weight:bold; border-radius:30px;
+}
+</style>
+{% endblock %}

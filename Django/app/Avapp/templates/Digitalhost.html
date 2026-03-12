@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+<title>DigitalHost</title>
+
+<div class="container mt-5">
+    <h1 class="text-center">Welcome to DigitalHost</h1>
+    <p class="text-center">Select the host animal to start exploring the data and insights.</p>
+
+    <div class="row text-center mt-4">
+        <!-- Chicken Card -->
+        <div class="col-md-4 col-sm-6 col-12 mb-4">
+            <div class="card h-100 position-relative">
+                <div class="image-container position-relative">
+                    <img src="{% static 'Avapp/images/chicken1.png' %}" class="card-img-top grey-img" alt="Chicken">
+                    <!-- Options for IsaBrown and Ross -->
+                    <div class="hover-options">
+                        <a href="{% url 'isabrown_detail' %}" class="btn btn-light btn-lg mx-3 shadow-lg">IsaBrown</a>
+                        <a href="{% url 'ross_detail' %}" class="btn btn-light btn-lg mx-3 shadow-lg">Ross</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Chicken</h5>
+                    <p class="card-text">Explore data and analysis for chickens.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trout Card -->
+        <div class="col-md-4 col-sm-6 col-12 mb-4">
+            <div class="card h-100">
+                <div class="image-container position-relative">
+                    <a href="{% url 'host_detail' host_type='trout' %}">
+                        <img src="{% static 'Avapp/images/trout.png' %}" class="card-img-top grey-img" alt="Trout">
+                    </a>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Trout</h5>
+                    <p class="card-text">Dive into the insights for trout data.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salmon Card -->
+        <div class="col-md-4 col-sm-6 col-12 mb-4">
+            <div class="card h-100">
+                <div class="image-container position-relative">
+                    <a href="{% url 'host_detail' host_type='salmon' %}">
+                        <img src="{% static 'Avapp/images/saumon1.png' %}" class="card-img-top grey-img" alt="Salmon">
+                    </a>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Salmon</h5>
+                    <p class="card-text">View the salmon data analysis options.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* General Card Styling */
+.card {
+    transition: transform 0.3s ease-in-out;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+/* Image Styling */
+.card-img-top {
+    transition: filter 0.4s ease-in-out, box-shadow 0.3s ease-in-out;
+    border-bottom: 1px solid #ddd;
+    filter: grayscale(100%);
+}
+
+.image-container:hover .card-img-top {
+    filter: grayscale(0%);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Hover Options */
+.hover-options {
+    position: absolute;
+    top: 75%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.image-container:hover .hover-options {
+    opacity: 1;
+}
+
+/* Button Styling */
+.hover-options .btn {
+    border-radius: 30px;
+    font-weight: bold;
+    padding: 12px 24px;
+    font-size: 18px;
+    transition: all 0.3s ease-in-out;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #000;
+    border: 1px solid #ddd;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+
+.hover-options .btn:hover {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #0056b3;
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block block-body-content %}
+<div class="container mt-5">
+    <h1 class="text-center">{{ data_type }} Data Analysis for Isabrown - Liver</h1>
+    <p class="text-center">{{ description }}</p>
+
+    <hr>
+<!-- Aggregate Bar Chart -->
+<h2 class="text-primary">Top 10 Genes by Total Expression</h2>
+<p>Summarizes the total expression levels of the top 10 genes.</p>
+<div>
+    {% if aggregate_bar_chart_html %}
+        {{ aggregate_bar_chart_html|safe }}
+    {% else %}
+        {% if errors.aggregate_bar_chart_error %}
+            <p class="text-danger">{{ errors.aggregate_bar_chart_error }}</p>
+        {% else %}
+            <p class="text-warning">No data available for the aggregate bar chart.</p>
+        {% endif %}
+    {% endif %}
+</div>
+
+<hr>
+<!-- Total Sunburst Chart -->
+<h2 class="text-primary">Total Gene Expression Overview</h2>
+<p>Explore the overall gene expression across all samples.</p>
+<div>
+    {% if total_sunburst_chart_html %}
+        {{ total_sunburst_chart_html|safe }}
+    {% else %}
+        {% if errors.total_sunburst_error %}
+            <p class="text-danger">{{ errors.total_sunburst_error }}</p>
+        {% else %}
+            <p class="text-warning">No data available for the total sunburst chart.</p>
+        {% endif %}
+    {% endif %}
+</div>
+
+    <hr>
+
+    <!-- Sunburst Mofa CC -->
+    <h2 class="text-primary">Sunburst Mofa CC</h2>
+    <p>...</p>
+    <div>
+        <img src="{% static 'Avapp/images/sunburst_mofa_cc_liver_genes.png' %}" class="card-img-top grey-img" alt="Sunburst Mofa CC">
+        <p class="text-warning">Text to add</p>
+    </div>
+
+    <hr>
+
+    <!-- Bar Chart Section -->
+    <h2 class="text-primary">Top Genes by Average Quantification</h2>
+    <p>Select the number of top genes to display:</p>
+    <form method="GET" class="form-inline mb-4">
+        <label for="top_n" class="mr-2">Top N Genes:</label>
+        <select name="top_n" id="top_n" class="form-control mx-2">
+            {% for n in top_n_options %}
+                <option value="{{ n }}" {% if n == top_n %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Preserve sample_x and sample_y in GET parameters -->
+        {% if sample_x %}
+            <input type="hidden" name="sample_x" value="{{ sample_x }}">
+        {% endif %}
+        {% if sample_y %}
+            <input type="hidden" name="sample_y" value="{{ sample_y }}">
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+
+    <div>
+        {% if bar_chart %}
+            {{ bar_chart|safe }}
+        {% else %}
+            {% if errors.bar_chart_error %}
+                <p class="text-danger">{{ errors.bar_chart_error }}</p>
+            {% else %}
+                <p class="text-warning">No data available for bar chart visualization.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- Sunburst Chart: Gene Expression by Sample -->
+    <h2 class="text-primary">Gene Expression by Sample (Top {{ top_n }} Genes)</h2>
+    <p>Explore the hierarchical structure of gene expression across samples for the top {{ top_n }} genes.</p>
+    <div>
+        {% if sunburst_chart %}
+            {{ sunburst_chart|safe }}
+        {% else %}
+            {% if errors.sunburst_error %}
+                <p class="text-danger">{{ errors.sunburst_error }}</p>
+            {% else %}
+                <p class="text-warning">No data available for sunburst chart visualization.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- Heatmap Section -->
+    <h2 class="text-primary">Heatmap of Gene Expression</h2>
+    <p>Visualize expression levels of top {{ max_genes_heatmap }} genes across samples.</p>
+    <div>
+        {% if heatmap_fig %}
+            {{ heatmap_fig|safe }}
+        {% else %}
+            {% if errors.heatmap_error %}
+                <p class="text-danger">{{ errors.heatmap_error }}</p>
+            {% else %}
+                <p class="text-warning">No data available for heatmap visualization.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- Violin Plot Section -->
+    <h2 class="text-primary">Violin Plot of Gene Expression</h2>
+    <p>Examine the distribution of gene expression levels across samples.</p>
+    <div>
+        {% if violin_fig %}
+            {{ violin_fig|safe }}
+        {% else %}
+            {% if errors.violin_error %}
+                <p class="text-danger">{{ errors.violin_error }}</p>
+            {% else %}
+                <p class="text-warning">No data available for violin plot visualization.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- Scatter Plot Section -->
+    <h2 class="text-primary">Scatter Plot of Gene Expression</h2>
+    <p>Compare gene expression between two samples.</p>
+
+    <form method="GET" class="form-inline mb-4">
+        <label for="sample_x" class="mr-2">Sample X:</label>
+        <select name="sample_x" id="sample_x" class="form-control mx-2">
+            {% for sample in sample_columns %}
+                <option value="{{ sample }}" {% if sample == sample_x %}selected{% endif %}>{{ sample }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="sample_y" class="mr-2">Sample Y:</label>
+        <select name="sample_y" id="sample_y" class="form-control mx-2">
+            {% for sample in sample_columns %}
+                <option value="{{ sample }}" {% if sample == sample_y %}selected{% endif %}>{{ sample }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Include other GET parameters to preserve them -->
+        <input type="hidden" name="top_n" value="{{ top_n }}">
+
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+
+    <div>
+        {% if scatter_fig %}
+            {{ scatter_fig|safe }}
+        {% else %}
+            {% if errors.scatter_error %}
+                <p class="text-danger">{{ errors.scatter_error }}</p>
+            {% else %}
+                <p class="text-warning">No data available for scatter plot visualization.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+<div class="text-center mt-4">
+        <a href="{% url 'isabrown_detail' %}" class="btn btn-secondary">Back to IsaBrown Tissue Selection</a>
+    </div>
+{% endblock %}

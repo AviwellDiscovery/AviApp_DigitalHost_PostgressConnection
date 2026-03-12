@@ -1,0 +1,909 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block block-body-content %}
+<meta charset="UTF-8">
+
+<!-- Google Fonts + DataTables CSS -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+
+<!-- Plotly (load once) -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<style>
+  /* Base Styles */
+  body, html {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+    background: #f7f8fb;
+    color: #0f172a;
+  }
+
+  /* Larger interactive containers */
+  .choice-container, .interactive-container {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 90%;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(16,24,40,0.08);
+    text-align: center;
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .interactive-container:hover { transform: scale(1.005); }
+
+  /* Hero heading (en-tête) */
+  .hero-title{
+    margin: 0 0 .25rem 0;
+    line-height: 1.2;
+    font-weight: 700; /* light-bold */
+    letter-spacing: 0;
+    font-size: clamp(1.7rem, 1.9vw + 1rem, 2.4rem);
+    color: #1f2937;
+  }
+  .hero-title .brand{ color:#1f2937; }
+  .hero-title .pill{
+    display:inline-block; margin-left:.4rem; padding:.2em .65em;
+    border-radius:999px;
+    background: linear-gradient(90deg,#a7f3d0,#93c5fd);
+    color:#0f172a; font-weight:700; white-space:nowrap;
+    box-shadow:0 4px 12px rgba(15,23,42,.10);
+  }
+  .hero-title .note{
+    display:inline-block; margin-left:.5rem;
+    font-size:.62em; font-weight:600; color:#64748b;
+  }
+  .hero-title .tagline{
+    display:block; margin-top:.6rem;
+    font-weight:600;
+    font-size:clamp(1.05rem, 1vw + .85rem, 1.45rem);
+    color:#334155;
+  }
+  .hero-accent{
+    width: 74px; height: 4px; margin: .75rem auto 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg,#a7f3d0,#bfdbfe);
+    opacity: .95;
+  }
+
+  /* Section headers (apply same light-bold feel) */
+  .section-head{
+  text-align: center;
+  margin: 0 0 .9rem 0;
+  }
+  .section-title{
+    margin: 0;
+    font-weight: 700;      /* light-bold */
+    letter-spacing: 0;
+    color: #0f172a;
+    font-size: clamp(1.2rem, .9vw + 1rem, 1.6rem);
+    line-height: 1.25;
+  }
+  .section-sub{
+    margin: .25rem 0 0;
+    font-weight: 600;
+    color: #64748b;
+    font-size: .98rem;
+  }
+  .section-accent{
+  width: 64px;
+  height: 4px;
+  margin: .5rem auto 0;   /* auto centers the accent bar */
+  border-radius: 999px;
+  background: linear-gradient(90deg,#a7f3d0,#bfdbfe);
+}
+
+  /* Choice Buttons (same size) */
+  .choice-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 26px;
+    flex-wrap: wrap;
+  }
+  .choice-btn {
+    height: 56px;
+    min-width: 320px;
+    padding: 0 24px;
+    font-size: 1.02rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    border-radius: 14px;
+    color: #0f172a;
+    letter-spacing: .2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 8px 20px rgba(2,6,23,.10), inset 0 -1px 0 rgba(2,6,23,.08);
+    transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
+  }
+  .choice-btn:hover { transform: translateY(-1px); }
+  .choice-btn:active{ transform: translateY(0); box-shadow: 0 6px 16px rgba(2,6,23,.12), inset 0 -1px 0 rgba(2,6,23,.12); }
+  .choice-btn:focus-visible{
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(59,130,246,.35), 0 8px 18px rgba(2,6,23,.12);
+  }
+  .btn-specific { background: linear-gradient(135deg,#d1fae5,#86efac); }
+  .btn-explore  { background: linear-gradient(135deg,#dbeafe,#93c5fd); }
+
+  /* Sections */
+  .section {
+    display: none;
+    background: inherit;
+    padding: 80px 20px 20px;
+    position: relative;
+  }
+
+  /* Larger table sections */
+  #tableFilterSection, #exploreFilterSection { min-height: 800px; padding-bottom: 200px; }
+
+  /* Back buttons */
+  .back-btn, .back-btn-right {
+    position: fixed;
+    padding: 10px 20px;
+    background: linear-gradient(45deg, #a7f3d0, #bfdbfe);
+    color: #0f172a;
+    border: none;
+    border-radius: 8px;
+    z-index: 3000;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform .2s ease;
+  }
+  .back-btn:hover, .back-btn-right:hover { transform: scale(1.03); }
+  .back-btn { top: 10px; left: 10px; }
+  .back-btn-right { top: 10px; right: 10px; }
+
+  /* Animations */
+  @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .slide-left { animation: slideInLeft .5s ease forwards; }
+  .slide-right { animation: slideInRight .5s ease forwards; }
+  @keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 0; } }
+  @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+  .slide-out-left { animation: slideOutLeft .45s ease forwards; }
+  .slide-out-right { animation: slideOutRight .45s ease forwards; }
+
+  @media (prefers-reduced-motion: reduce){
+    .interactive-container, .choice-btn,
+    .slide-left, .slide-right, .slide-out-left, .slide-out-right {
+      transition: none !important;
+      animation: none !important;
+      transform: none !important;
+    }
+  }
+
+  /* Tables */
+  #tableContainer { margin-top: 20px; overflow-x: auto; }
+  table.dataTable thead th {
+    background: #eef2ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 700;
+    color: #111827;
+  }
+  table.dataTable td { white-space: normal; word-wrap: break-word; }
+  table.dataTable { width: 100% !important; table-layout: fixed; }
+  .dataTables_wrapper { width: 100% !important; box-sizing: border-box; }
+
+  /* Spinner */
+  #spinner {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5000;
+  }
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border: 0.25em solid #e5e7eb;
+    border-top-color: #60a5fa;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Plotly sunburst container */
+  .sunburst-container { width: 100%; max-width: 760px; height: 700px; margin: 0 auto; }
+  .mt-5 { margin-top: 3rem; }
+
+  /* Overview statistics */
+  #tableOverview, #exploreTableOverview {
+    margin-bottom: 20px;
+    background: #ecfdf5;
+    border: 1px solid #d1fae5;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1.05em;
+  }
+  /* Explore Data button special style */
+.explore-btn {
+  min-width: unset;              /* override fixed min-width */
+  padding: 12px 28px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4ade80, #22c55e); /* green gradient */
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.explore-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(16, 185, 129, 0.45);
+}
+
+.explore-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 12px rgba(16, 185, 129, 0.4) inset;
+}
+
+.explore-btn:focus-visible {
+  outline: 3px solid #bbf7d0; /* light green ring */
+  outline-offset: 3px;
+}
+</style>
+
+<!-- Spinner -->
+<div id="spinner"><div class="spinner-border"></div></div>
+
+<!-- Choice Screen -->
+<div id="choiceContainer" class="choice-container interactive-container">
+  <h1 class="hero-title">
+    <span class="brand">Welcome to</span>
+    <span class="pill">Avi-Diversity</span>
+    <span class="note">(Operational Taxonomic Unit)</span>
+    <span class="tagline">Do you have a query?</span>
+  </h1>
+  <div class="hero-accent"></div>
+
+  <div class="choice-buttons">
+    <button id="btnSpecific" class="choice-btn btn-specific">I have a specific query</button>
+    <button id="btnExplore" class="choice-btn btn-explore">Explore data</button>
+  </div>
+
+  <div class="container mt-5 text-center">
+    <br>
+    <a href="{% url 'isabrown_detailv2' %}" class="btn btn-secondary modern-btn">Back to Omic Selection</a>
+  </div>
+</div>
+
+<!-- Specific Query Section -->
+<div id="sunburstSection" class="section interactive-container">
+  <button class="back-btn" id="backFromSunburst">Back</button>
+
+  <!-- Variable Input -->
+  <div id="searchBox" class="interactive-container">
+    <div class="section-head">
+      <h2 class="section-title">Select a Otu</h2>
+      <div class="section-sub">Search or choose an Otu identifier to begin.</div>
+      <div class="section-accent"></div>
+    </div>
+    <label for="bacteriaSearch" style="font-size: 1.05em;">Search or select your Bacteria</label><br>
+    <input type="text" id="bacteriaSearch" name="bacteriaSearch" autocomplete="off" list="otuList"
+           placeholder="e.g. s__Mediterraneibacter sp904418845_otu, s__Borkfalkia stercoripullorum_otu"
+           style="padding: 10px; width: 300px; margin-top: 10px; font-size: 1em;">
+    <datalist id="otuList">
+      {% for otu in otu_list %}
+        <option value="{{ otu }}"></option>
+      {% endfor %}
+    </datalist>
+  </div>
+
+  <!-- Omics Selection -->
+  <div id="omicsChoiceContainer" class="interactive-container" style="display: none;">
+    <div class="section-head">
+      <h2 class="section-title">Choose a Matching Omic</h2>
+      <div class="section-sub">Link your Otu with one of the omic layers.</div>
+      <div class="section-accent"></div>
+    </div>
+    <label for="omicsChoice" style="font-size: 1.05em;">Choose the omics to match with your Otu:</label><br>
+    <select id="omicsChoice" name="omicsChoice" style="padding: 10px; width: 300px; margin-top: 10px; font-size: 1em;">
+      <option value="" disabled selected>--Select Omic--</option>
+      <option value="otu">Otu</option>
+      <option value="metab">Metabolomic</option>
+      <option value="acid">Acid</option>
+      <option value="functionnal">Functionnal</option>
+      <option value="ileum">Ileum</option>
+      <option value="muscle">Muscle</option>
+      <option value="liver">Liver</option>
+    </select>
+  </div>
+
+  <!-- Cluster Lookup -->
+  <div id="clusterLookupContainer" class="interactive-container" style="display: none;">
+    <div class="section-head">
+      <h2 class="section-title">Cluster Lookup</h2>
+      <div class="section-sub">Check whether your Otu appears within our clusters.</div>
+      <div class="section-accent"></div>
+    </div>
+    <button id="clusterLookupButton" style="padding: 10px 20px; font-size: 1em;">Check Cluster</button>
+  </div>
+
+  <!-- Cluster Lookup Result -->
+  <div id="clusterResult" class="interactive-container" style="font-size: 1.05em;"></div>
+
+  <!-- Toggle Sunburst -->
+  <div id="toggleSunburstContainer" class="interactive-container" style="display: none;">
+    <div class="section-head">
+      <h2 class="section-title">Sunburst Clusters</h2>
+      <div class="section-sub">Show or hide the cluster visualization.</div>
+      <div class="section-accent"></div>
+    </div>
+    <button id="toggleSunburstButton" style="padding: 10px 20px; font-size: 1em;">Toggle Sunburst</button>
+  </div>
+
+  <!-- Plotly Sunburst View -->
+  <div id="plotlySunburstView" style="display: none;">
+    <div class="interactive-container">
+      <div class="section-head">
+        <h2 class="section-title">Sunburst MOFA-CC</h2>
+        <div class="section-sub">Adjust the threshold to reveal different cluster granularities.</div>
+        <div class="section-accent"></div>
+      </div>
+
+      <!-- Threshold slider -->
+      <div class="interactive-container">
+        <div class="section-head" style="margin-bottom:.5rem;">
+          <h3 class="section-title" style="font-size:1.1rem;">Threshold</h3>
+          <div class="section-accent"></div>
+        </div>
+        <input type="range" id="threshold_slider" min="0.4" max="0.6" step="0.1" value="0.4" style="width:200px;">
+        <span id="threshold_value">0.4</span>
+      </div>
+
+      <!-- 0.6 -->
+      <div id="sunburst_container_0_6" class="sunburst-container">
+        {{ sunburst_html_0_6|safe }}
+      </div>
+      <!-- 0.5 -->
+      <div id="sunburst_container_0_5" class="sunburst-container" style="display: none;">
+        {{ sunburst_html_0_5|safe }}
+      </div>
+      <!-- 0.4 -->
+      <div id="sunburst_container_0_4" class="sunburst-container" style="display: none;">
+        {{ sunburst_html_0_4|safe }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Filter Section -->
+  <div id="tableFilterSection" class="interactive-container" style="display: none;">
+    <div class="section-head">
+      <h2 class="section-title">Optimize Your Data Display</h2>
+      <div class="section-sub">Filter results by coefficient range and accuracy.</div>
+      <div class="section-accent"></div>
+    </div>
+
+    <div id="tableOverview" style="display: none;">
+      <div class="section-head" style="margin-bottom:.5rem;">
+        <h3 class="section-title" style="font-size:1.1rem;">Overview Statistics</h3>
+        <div class="section-accent"></div>
+      </div>
+      <p id="overviewStats"></p>
+    </div>
+
+    <div id="specificResultsInfo" style="margin-bottom: 10px; font-weight: 700;"></div>
+
+    <div style="text-align: center;">
+      <label>Coefficient Range:</label>
+      <input type="number" id="corrMin" value="-5" step="0.1" style="width:70px;">
+      to
+      <input type="number" id="corrMax" value="5" step="0.1" style="width:70px;">
+      <br><br>
+      <label>Minimum Accuracy:</label>
+      <input type="number" id="minAccuracy" value="0" step="0.0001" style="width:70px;">
+      <br><br>
+<button id="filterTableButton" title="Click each time you select a different variable" class="choice-btn btn-specific" style="min-width:unset;">Explore Data</button>    </div>
+
+    <div id="tableContainer" style="margin-top: 20px;">
+      <table id="resultsTable" class="display" style="width:100%; margin:0 auto;">
+        <thead>
+          <tr>
+            <th title="Selected omic category, Predicted variable">Selected Omic</th>
+            <th title="Variable chosen by the user for analysis">Selected Otu</th>
+            <th title="Correlation coefficient ">Coeff</th>
+            <th title="Minimum value of the coefficient set">MinCoeff</th>
+            <th title="Maximum value of the coefficient set">MaxCoeff</th>
+            <th title="Overall rate of correct predictions by the model">Accuracy</th>
+            <th title="P-value of the coefficient">Pvalue</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Explore Section -->
+<div id="exploreSection" class="section interactive-container">
+  <button class="back-btn-right" id="backFromFullInterface">Back</button>
+
+  <div id="explore_plotlySunburstView">
+    <div class="interactive-container">
+      <div class="section-head">
+        <h2 class="section-title">Sunburst MOFA-CC</h2>
+        <div class="section-sub">Explore clusters at different thresholds.</div>
+        <div class="section-accent"></div>
+      </div>
+
+      <div class="interactive-container">
+        <div class="section-head" style="margin-bottom:.5rem;">
+          <h3 class="section-title" style="font-size:1.1rem;">Threshold</h3>
+          <div class="section-accent"></div>
+        </div>
+        <input type="range" id="explore_threshold_slider" min="0.4" max="0.6" step="0.1" value="0.4" style="width:200px;">
+        <span id="explore_threshold_value">0.4</span>
+      </div>
+
+      <!-- 0.4 -->
+      <div id="explore_sunburst_container_0_6" class="sunburst-container">
+        {{ explore_sunburst_html_0_6|safe }}
+      </div>
+      <!-- 0.3 -->
+      <div id="explore_sunburst_container_0_5" class="sunburst-container" style="display: none;">
+        {{ explore_sunburst_html_0_5|safe }}
+      </div>
+      <!-- 0.2 -->
+      <div id="explore_sunburst_container_0_4" class="sunburst-container" style="display: none;">
+        {{ explore_sunburst_html_0_4|safe }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Explore Filters -->
+  <div id="exploreTissueSelection" class="interactive-container" style="margin-top: 20px;">
+    <div class="section-head">
+      <h2 class="section-title">Step 1: Select an Omic</h2>
+      <div class="section-sub">Pick the omic to match with your otu.</div>
+      <div class="section-accent"></div>
+    </div>
+
+    <label for="exploreTissueChoice">Choose the omic:</label><br>
+    <select id="exploreTissueChoice" name="exploreTissueChoice" style="padding:10px; width:300px; margin-top:10px; font-size:1em;">
+      <option value="" disabled selected>--Select Omic--</option>
+      <option value="otu">Otu</option>
+      <option value="metab">Metabolomic</option>
+      <option value="acid">Acid</option>
+      <option value="functionnal">Functionnal</option>
+      <option value="ileum">Ileum</option>
+      <option value="muscle">Muscle</option>
+      <option value="liver">Liver</option>
+    </select>
+    <button id="exploreLoadData" style="padding:10px 20px; font-size:1em; margin-left:10px;">Load Data</button>
+  </div>
+
+  <div id="exploreCorrelationDistribution" class="interactive-container" style="display: none; margin-top: 20px;">
+    <div class="section-head">
+      <h2 class="section-title">Step 2: Coefficient Distribution</h2>
+      <div class="section-sub">View the distribution of correlation coefficients.</div>
+      <div class="section-accent"></div>
+    </div>
+    <div id="correlationHistogram" style="width:100%; height:400px;"></div>
+  </div>
+
+  <div id="exploreFilterSection" class="interactive-container" style="display: none; margin-top: 20px;">
+    <div class="section-head">
+      <h2 class="section-title">Step 3: Filter and Explore Data</h2>
+      <div class="section-sub">Refine results and export the table if needed.</div>
+      <div class="section-accent"></div>
+    </div>
+
+    <div id="exploreTableOverview">
+      <div class="section-head" style="margin-bottom:.5rem;">
+        <h3 class="section-title" style="font-size:1.1rem;">Overview Statistics</h3>
+        <div class="section-accent"></div>
+      </div>
+      <p id="exploreOverviewStats"></p>
+    </div>
+
+    <div id="exploreResultsInfo" style="margin-bottom: 10px; font-weight: 700;"></div>
+
+    <div style="text-align: center;">
+      <label>Coefficient Range:</label>
+      <input type="number" id="exploreCorrMin" value="-5" step="0.1" style="width:70px;">
+      to
+      <input type="number" id="exploreCorrMax" value="5" step="0.1" style="width:70px;">
+      <br><br>
+      <label>Minimum Accuracy:</label>
+      <input type="number" id="exploreMinAccuracy" value="0" step="0.0001" style="width:70px;">
+      <br><br>
+<!--      <button id="exploreFilterButton" title="Click each time you select a different tissu" style="padding:10px 20px; font-size:1em;">Explore Data</button>-->
+      <button id="exploreFilterButton" title="Click each time you select a different variable" class="choice-btn btn-specific" style="min-width:unset;">Explore Data</button>
+    </div>
+
+    <div id="exploreTableContainer" style="margin-top: 20px;">
+      <table id="exploreResultsTable" class="display" style="width:100%; margin:0 auto;">
+        <thead>
+          <tr>
+            <th title="Selected omic category, Predicted variable">Selected Omic</th>
+            <th title="Full Ileum variable">Full Otu</th>
+            <th title="Correlation coefficient ">Coeff</th>
+            <th title="Minimum value of the coefficient set">MinCoeff</th>
+            <th title="Maximum value of the coefficient set">MaxCoeff</th>
+            <th title="Overall rate of correct predictions by the model">Accuracy</th>
+            <th title="P-value of the coefficient">Pvalue</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- JS libs -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Helpers
+  const $spinner = document.getElementById('spinner');
+  const showSpinner = (v) => { $spinner.style.display = v ? 'block' : 'none'; };
+
+  // Init defaults
+  const bs = document.getElementById("bacteriaSearch");
+  const oc = document.getElementById("omicsChoice");
+  if (bs) bs.value = "";
+  if (oc) oc.selectedIndex = 0;
+  document.getElementById("corrMin").value = "-5";
+  document.getElementById("corrMax").value = "5";
+  document.getElementById("minAccuracy").value = "0";
+  document.getElementById("clusterResult").innerHTML = "";
+  document.getElementById("toggleSunburstContainer").style.display = "none";
+  document.getElementById("tableFilterSection").style.display = "none";
+  $("#resultsTable tbody").html("");
+  document.getElementById("plotlySunburstView").style.display = "none";
+  document.getElementById("tableOverview").style.display = "none";
+
+  // Navigation + animations
+  const choiceContainer = document.getElementById("choiceContainer");
+  const sunburstSection = document.getElementById("sunburstSection");
+  const exploreSection  = document.getElementById("exploreSection");
+  document.getElementById("btnSpecific").addEventListener("click", () => {
+    choiceContainer.classList.add("slide-out-left");
+    setTimeout(() => {
+      choiceContainer.style.display = "none";
+      choiceContainer.classList.remove("slide-out-left");
+      sunburstSection.style.display = "block";
+      sunburstSection.classList.add("slide-left");
+    }, 500);
+  });
+  document.getElementById("btnExplore").addEventListener("click", () => {
+    choiceContainer.classList.add("slide-out-right");
+    setTimeout(() => {
+      choiceContainer.style.display = "none";
+      choiceContainer.classList.remove("slide-out-right");
+      exploreSection.style.display = "block";
+      exploreSection.classList.add("slide-right");
+    }, 500);
+  });
+  document.getElementById("backFromSunburst").addEventListener("click", () => {
+    sunburstSection.classList.add("slide-out-left");
+    setTimeout(() => {
+      sunburstSection.style.display = "none";
+      sunburstSection.classList.remove("slide-out-left");
+      choiceContainer.style.display = "flex";
+      choiceContainer.style.flexDirection = "column";
+      choiceContainer.classList.add("slide-left");
+      setTimeout(() => { choiceContainer.classList.remove("slide-left"); }, 500);
+    }, 500);
+  });
+  document.getElementById("backFromFullInterface").addEventListener("click", () => {
+    exploreSection.classList.add("slide-out-right");
+    setTimeout(() => {
+      exploreSection.style.display = "none";
+      exploreSection.classList.remove("slide-out-right");
+      choiceContainer.style.display = "flex";
+      choiceContainer.style.flexDirection = "column";
+      choiceContainer.classList.add("slide-right");
+      setTimeout(() => { choiceContainer.classList.remove("slide-right"); }, 500);
+    }, 500);
+  });
+
+  // Input show/hide
+  const omicsChoice = document.getElementById("omicsChoice");
+  const bacteriaSearch = document.getElementById("bacteriaSearch");
+  const omicsChoiceContainer = document.getElementById("omicsChoiceContainer");
+  bacteriaSearch.addEventListener("input", function() {
+    if (bacteriaSearch.value.trim() !== "") {
+      omicsChoiceContainer.style.display = "block";
+      if (omicsChoice.value.trim() !== "") {
+        document.getElementById("clusterLookupContainer").style.display = "block";
+        document.getElementById("toggleSunburstContainer").style.display = "block";
+        document.getElementById("tableFilterSection").style.display = "block";
+      }
+    } else {
+      omicsChoiceContainer.style.display = "none";
+      document.getElementById("clusterLookupContainer").style.display = "none";
+      document.getElementById("clusterResult").innerHTML = "";
+      document.getElementById("toggleSunburstContainer").style.display = "none";
+      document.getElementById("tableFilterSection").style.display = "none";
+    }
+  });
+  omicsChoice.addEventListener("change", function() {
+    if (omicsChoice.value.trim() !== "") {
+      document.getElementById("clusterLookupContainer").style.display = "block";
+      document.getElementById("toggleSunburstContainer").style.display = "block";
+      document.getElementById("tableFilterSection").style.display = "block";
+    } else {
+      document.getElementById("clusterLookupContainer").style.display = "none";
+      document.getElementById("toggleSunburstContainer").style.display = "none";
+      document.getElementById("tableFilterSection").style.display = "none";
+    }
+  });
+
+  // Cluster lookup
+  const clusterLookupButton = document.getElementById("clusterLookupButton");
+  const clusterResult = document.getElementById("clusterResult");
+  clusterLookupButton.addEventListener("click", function() {
+    const bacteria = bacteriaSearch.value.trim();
+    if (!bacteria) { alert("Please enter a gene variable."); return; }
+    fetch(window.location.pathname + `?cluster_lookup=1&bacteria=${encodeURIComponent(bacteria)}`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.found) {
+        clusterResult.innerHTML = `<b>Your Otu was identified within our cluster using a threshold of ${data.threshold}.</b><br><b>Cluster members:</b> ${data.cluster_members.join(', ')}`;
+      } else {
+        clusterResult.innerHTML = "Otu not found in any cluster.";
+      }
+      document.getElementById("toggleSunburstContainer").style.display = "block";
+      document.getElementById("tableFilterSection").style.display = "block";
+    })
+    .catch(err => { console.error(err); clusterResult.innerHTML = "An error occurred."; });
+  });
+
+  // Sunburst toggle
+  const toggleSunburstButton = document.getElementById("toggleSunburstButton");
+  const plotlySunburstView = document.getElementById("plotlySunburstView");
+  toggleSunburstButton.addEventListener("click", function() {
+    const hidden = (plotlySunburstView.style.display === "none" || plotlySunburstView.style.display === "");
+    plotlySunburstView.style.display = hidden ? "block" : "none";
+  });
+
+  // Specific: table filter
+  let resultsTable;
+  const filterTableButton = document.getElementById("filterTableButton");
+  const specificResultsInfo = document.getElementById("specificResultsInfo");
+  filterTableButton.addEventListener("click", function() {
+    showSpinner(true);
+    const tissue   = document.getElementById("omicsChoice").value;
+    const variable = document.getElementById("bacteriaSearch").value.trim();
+    const minCorr  = document.getElementById("corrMin").value;
+    const maxCorr  = document.getElementById("corrMax").value;
+    const accuracyInput = document.getElementById("minAccuracy").value.trim();
+    const accuracy = isNaN(parseFloat(accuracyInput)) ? 0 : parseFloat(accuracyInput);
+
+    const url = window.location.pathname + `?table_filter=1&tissue=${encodeURIComponent(tissue)}`
+              + `&variable=${encodeURIComponent(variable)}&correlation_min=${minCorr}`
+              + `&correlation_max=${maxCorr}&accuracy=${accuracy}`;
+
+    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then(r => r.json())
+      .then(data => {
+        showSpinner(false);
+        if (data.error) { alert(data.error); return; }
+
+        const totalCount = (typeof data.total_count === 'number') ? data.total_count : (data.results || []).length;
+        const newData = (data.results || []).map(item => [
+          item.var1, item.var2, item.Coefficient, item.min_val, item.max_val, item.accuracy, item.pvalue
+        ]);
+        specificResultsInfo.innerHTML = `Found <b>${totalCount}</b> total results, showing <b>${newData.length}</b>.`;
+
+        if (resultsTable) {
+          resultsTable.clear().rows.add(newData).draw();
+        } else {
+          resultsTable = $("#resultsTable").DataTable({
+            data: newData,
+            columns: [
+              { title: "Selected Omic", width: "150px" },
+              { title: "Selected Otu", width: "190px" },
+              { title: "Coeff", width: "60px" },
+              { title: "MinCoeff", width: "80px" },
+              { title: "MaxCoeff", width: "80px" },
+              { title: "Accuracy", width: "80px" },
+              { title: "Pvalue", width: "70px" }
+            ],
+            pageLength: 100,
+            order: [[2, "desc"]],
+            autoWidth: false,
+            dom: '<"top"pBf>rt<"bottom"lip><"clear">',
+            buttons: [{ extend:'csvHtml5', title:'Filtered_Results', exportOptions:{ columns:':visible' } }]
+          });
+        }
+
+        if (data.overview && data.overview.median !== null) {
+          document.getElementById("overviewStats").innerHTML =
+            `Median: ${Number(data.overview.median).toFixed(4)} | ` +
+            `Q1: ${Number(data.overview.q1).toFixed(4)} | ` +
+            `Q3: ${Number(data.overview.q3).toFixed(4)}`;
+          document.getElementById("tableOverview").style.display = "block";
+        } else {
+          document.getElementById("tableOverview").style.display = "none";
+        }
+      })
+      .catch(err => { showSpinner(false); console.error(err); alert("An error occurred while filtering the table."); });
+  });
+
+  // Specific sunburst slider (0.5 / 0.4 / 0.3)
+  const thresholdSlider = document.getElementById('threshold_slider');
+  const thresholdValue  = document.getElementById('threshold_value');
+  const sbCont06 = document.getElementById('sunburst_container_0_6');
+  const sbCont05 = document.getElementById('sunburst_container_0_5');
+  const sbCont04 = document.getElementById('sunburst_container_0_4');
+  const showSpecific = (thr) => {
+    thresholdValue.textContent = thr;
+    sbCont06.style.display = (thr === "0.6") ? 'block' : 'none';
+    sbCont05.style.display = (thr === "0.5") ? 'block' : 'none';
+    sbCont04.style.display = (thr === "0.4") ? 'block' : 'none';
+  };
+  showSpecific(thresholdSlider.value);
+  thresholdSlider.addEventListener('input', () => showSpecific(thresholdSlider.value));
+
+  // Explore sunburst slider (0.4 / 0.3 / 0.2)
+  const explore_thresholdSlider = document.getElementById('explore_threshold_slider');
+  const explore_thresholdValue  = document.getElementById('explore_threshold_value');
+  const explore_sbCont06 = document.getElementById('explore_sunburst_container_0_6');
+  const explore_sbCont05 = document.getElementById('explore_sunburst_container_0_5');
+  const explore_sbCont04 = document.getElementById('explore_sunburst_container_0_4');
+  const showExplore = (thr) => {
+    explore_thresholdValue.textContent = thr;
+    explore_sbCont06.style.display = (thr === "0.6") ? 'block' : 'none';
+    explore_sbCont05.style.display = (thr === "0.5") ? 'block' : 'none';
+    explore_sbCont04.style.display = (thr === "0.4") ? 'block' : 'none';
+  };
+  showExplore(explore_thresholdSlider.value);
+  explore_thresholdSlider.addEventListener('input', () => showExplore(explore_thresholdSlider.value));
+
+// Plotly click handlers — open NCBI Taxonomy on label click (ignore "Cluster")
+function bindSunburstClicks(containerId){
+  const plot = document.querySelector(`#${containerId} .js-plotly-plot`);
+  if (!plot || typeof plot.on !== 'function') return;
+  if (plot.dataset.bound === '1') return; // avoid double-binding
+  plot.dataset.bound = '1';
+
+  plot.on('plotly_click', function (data) {
+    if (!data.points || !data.points.length) return;
+    const label = (data.points[0].label || '').toString();
+    if (!label || /^cluster/i.test(label)) return;
+    const url = 'https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?name=' + encodeURIComponent(label);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  });
+}
+
+// Bind for all visible/possible containers
+[
+  'sunburst_container_0_6',
+  'sunburst_container_0_5',
+  'sunburst_container_0_4',
+  'explore_sunburst_container_0_6',
+  'explore_sunburst_container_0_5',
+  'explore_sunburst_container_0_4'
+].forEach(bindSunburstClicks);
+
+// If Plotly re-renders (e.g., after threshold change), rebind on the new plot
+document.addEventListener('plotly_afterplot', (e) => {
+  const host = e.target.closest('.sunburst-container');
+  if (host && host.id) bindSunburstClicks(host.id);
+}, true);
+
+
+
+  // Explore: distribution
+  const exploreLoadDataBtn = document.getElementById("exploreLoadData");
+  const exploreCorrelationDistribution = document.getElementById("exploreCorrelationDistribution");
+  const exploreFilterSection = document.getElementById("exploreFilterSection");
+  exploreLoadDataBtn.addEventListener("click", function () {
+    const tissue = document.getElementById("exploreTissueChoice").value;
+    showSpinner(true);
+
+    // Skip histogram for some tissues if desired
+    if (tissue === "ileum" || tissue === "Muscle" || tissue === "Liver") {
+      showSpinner(false);
+      exploreCorrelationDistribution.style.display = "none";
+      exploreFilterSection.style.display = "block";
+      return;
+    }
+
+    fetch(window.location.pathname + `?explore_distribution=1&tissue=${encodeURIComponent(tissue)}`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(r => r.json())
+    .then(data => {
+      showSpinner(false);
+      if (!data.distribution || !data.distribution.correlation_values) {
+        alert("Server returned unexpected data format.");
+        return;
+      }
+      const histogramData = [{ x: data.distribution.correlation_values, type: "histogram" }];
+      Plotly.newPlot("correlationHistogram", histogramData, {
+        title: "Coefficient Distribution",
+        xaxis: { title: "Coefficient Value" },
+        yaxis: { title: "Count" }
+      });
+      exploreCorrelationDistribution.style.display = "block";
+      exploreFilterSection.style.display = "block";
+    })
+    .catch(err => { showSpinner(false); console.error(err); alert("Failed to load data."); });
+  });
+
+  // Explore: table filter
+  let exploreResultsTable;
+  const exploreFilterButton = document.getElementById("exploreFilterButton");
+  const exploreResultsInfo = document.getElementById("exploreResultsInfo");
+  const exploreOverviewStats = document.getElementById("exploreOverviewStats");
+  exploreFilterButton.addEventListener("click", function () {
+    const tissue = document.getElementById("exploreTissueChoice").value;
+    const minCorr = document.getElementById("exploreCorrMin").value;
+    const maxCorr = document.getElementById("exploreCorrMax").value;
+    const minAccuracy = document.getElementById("exploreMinAccuracy").value;
+
+    showSpinner(true);
+    const url = window.location.pathname
+      + `?explore_table_filter=1&tissue=${encodeURIComponent(tissue)}`
+      + `&corrMin=${minCorr}&corrMax=${maxCorr}&accuracy=${minAccuracy}`;
+
+    fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+      .then(r => r.json())
+      .then(data => {
+        showSpinner(false);
+        if (!data.results) { alert("Server returned unexpected data format."); return; }
+
+        const totalCount = (typeof data.total_count === 'number') ? data.total_count : (data.results || []).length;
+        const shownCount = (typeof data.shownCount === 'number') ? data.shownCount : (data.results || []).length;
+        exploreResultsInfo.innerHTML = `Found <b>${totalCount}</b> total results, showing <b>${shownCount}</b>.`;
+
+        const newData = (data.results || []).map(item => [
+          item.var1, item.var2, item.correlation, item.min_val, item.max_val, item.accuracy, item.pvalue
+        ]);
+
+        if (exploreResultsTable) {
+          exploreResultsTable.clear().rows.add(newData).draw();
+        } else {
+          exploreResultsTable = $("#exploreResultsTable").DataTable({
+            data: newData,
+            columns: [
+              { title: "Selected Omic", width: "150px" },
+              { title: "Full Otu", width: "190px" },
+              { title: "Coeff", width: "60px" },
+              { title: "MinCoeff", width: "80px" },
+              { title: "MaxCoeff", width: "80px" },
+              { title: "Accuracy", width: "80px" },
+              { title: "Pvalue", width: "70px" }
+            ],
+            pageLength: 100,
+            order: [[2, "desc"]],
+            autoWidth: false,
+            dom: '<"top"pBf>rt<"bottom"lip><"clear">',
+            buttons: [{ extend:'csvHtml5', title:'Filtered_Results', exportOptions:{ columns:':visible' } }]
+          });
+        }
+
+        if (data.overview && data.overview.median !== null) {
+          exploreOverviewStats.innerHTML =
+            `Median: ${Number(data.overview.median).toFixed(4)} | ` +
+            `Q1: ${Number(data.overview.q1).toFixed(4)} | ` +
+            `Q3: ${Number(data.overview.q3).toFixed(4)}`;
+        } else {
+          exploreOverviewStats.innerHTML = "";
+        }
+      })
+      .catch(err => { showSpinner(false); console.error(err); alert("Failed to filter data."); });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+
+<div class="container mt-5">
+
+    <h1 class="text-center">{{ host_type|title }} Data Analysis</h1>
+    <p class="text-center">Explore detailed data and insights for IsaBrown type.</p>
+
+    <div class="row mt-4">
+        <!-- Host Image and Description -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <img src="{% static 'Avapp/images/{{ host_type }}.png' %}" class="card-img-top styled-img" alt="{{ host_type|title }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ host_type|title }} Overview</h5>
+                    <p class="card-text">
+                        Here you will find the detailed analysis, datasets, and insights for IsaBrown type.
+                        Click on the links below to explore various options.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Host Analysis Options -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Analysis Options</h5>
+                    <ul>
+                        <li><a href="#">Genomic Data</a></li>
+                        <li><a href="#">Taxonomic Insights</a></li>
+                        <li><a href="#">Health Data</a></li>
+                        <li><a href="#">Environmental Impact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">{{ host_type|title }} IsaBrown Type</h1>
+    <p class="text-center">Click on any category below to process related data.</p>
+
+    <div class="row text-center">
+        <!-- Top Row: Three Images -->
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'process_data' 'isabrown' 'bacterien' %}">
+                <div class="card border-0">
+                    <img src="{% static 'Avapp/images/bacterie.png' %}" class="card-img-top styled-img img-fluid" alt="Bacterien">
+                    <div class="card-body">
+                        <h5 class="card-title">Bacterien</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'process_data' 'isabrown' 'molecule' %}">
+                <div class="card border-0">
+                    <img src="{% static 'Avapp/images/molecule.png' %}" class="card-img-top styled-img img-fluid" alt="Molecule">
+                    <div class="card-body">
+                        <h5 class="card-title">Molecule</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'process_data' 'isabrown' 'ileum' %}">
+                <div class="card border-0">
+                    <img src="{% static 'Avapp/images/chickengut2.png' %}" class="card-img-top styled-img img-fluid" alt="Helium">
+                    <div class="card-body">
+                        <h5 class="card-title">Ileum</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Two Centered Images -->
+    <div class="row text-center justify-content-center">
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'process_data' 'isabrown' 'muscle' %}">
+                <div class="card border-0">
+                    <img src="{% static 'Avapp/images/muscle.png' %}" class="card-img-top styled-img img-fluid" alt="Muscle">
+                    <div class="card-body">
+                        <h5 class="card-title">Muscle</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <a href="{% url 'process_data' 'isabrown' 'liver' %}">
+                <div class="card border-0">
+                    <img src="{% static 'Avapp/images/liver.png' %}" class="card-img-top styled-img img-fluid" alt="Liver">
+                    <div class="card-body">
+                        <h5 class="card-title">Liver</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Add styles for the hover effects -->
+<style>
+    .grayscale-hover {
+        filter: grayscale(100%);
+        transition: all 0.3s ease;
+    }
+
+    .grayscale-hover:hover {
+        filter: grayscale(0%);
+        transform: scale(1.05);
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        text-transform: capitalize;
+    }
+
+    .styled-img {
+        filter: grayscale(100%); /* Make the image grayscale initially */
+        border-radius: 15px; /* Rounded corners */
+        border: 2px solid #dee2e6; /* Light gray border */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1); /* Shadow effect */
+        transition: all 0.3s ease;
+    }
+
+    .styled-img:hover {
+        filter: grayscale(0%); /* Remove grayscale on hover */
+        transform: scale(1.05); /* Slight zoom on hover */
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 12px 24px rgba(0, 0, 0, 0.2); /* Stronger shadow on hover */
+    }
+</style>
+
+<div class="container mt-5">
+    <h1 class="text-center">{{ title }}</h1>
+    <p class="text-center">{{ description }}</p>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'DigitalHost' %}" class="btn btn-secondary">Back to Digital Host Selection</a>
+    </div>
+</div>
+
+{% endblock %}

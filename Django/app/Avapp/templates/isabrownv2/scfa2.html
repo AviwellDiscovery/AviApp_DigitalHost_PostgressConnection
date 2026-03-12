@@ -1,0 +1,625 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block block-body-content %}
+<meta charset="UTF-8">
+
+<!-- Google Fonts + DataTables CSS -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+
+<style>
+  /* Base */
+  :root{
+    --brand-grad-a:#a7f3d0; /* mint */
+    --brand-grad-b:#bfdbfe; /* light blue */
+    --ink:#0f172a;          /* slate-900 */
+    --ink-2:#111827;        /* near-black */
+    --muted:#64748b;        /* slate-500 */
+    --panel:#fff;
+    --bg:#f7f8fb;
+  }
+  html, body{
+    margin:0; padding:0; min-height:100vh;
+    font-family:'Montserrat',sans-serif; background:var(--bg); color:var(--ink);
+  }
+
+  /* Cardy sections */
+  .choice-container, .interactive-container{
+    margin:20px auto; padding:20px; max-width:90%;
+    background:var(--panel); border-radius:12px;
+    box-shadow:0 4px 10px rgba(16,24,40,.08);
+    text-align:center; transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .interactive-container:hover{ transform:scale(1.005); }
+
+  /* Hero */
+  .hero-title{
+    margin:0 0 .25rem 0; line-height:1.2; font-weight:700; letter-spacing:0;
+    font-size:clamp(1.7rem,1.9vw + 1rem,2.4rem); color:#1f2937;
+  }
+  .hero-title .brand{ color:#1f2937; }
+  .hero-title .pill{
+    display:inline-block; margin-left:.4rem; padding:.2em .65em; border-radius:999px;
+    background:linear-gradient(90deg,var(--brand-grad-a),var(--brand-grad-b));
+    color:var(--ink); font-weight:700; white-space:nowrap;
+    box-shadow:0 4px 12px rgba(15,23,42,.10);
+  }
+  .hero-title .note{
+    display:inline-block; margin-left:.5rem; font-size:.62em; font-weight:600; color:#64748b;
+  }
+  .hero-title .tagline{
+    display:block; margin-top:.6rem; font-weight:600;
+    font-size:clamp(1.05rem,1vw + .85rem,1.45rem); color:#334155;
+  }
+  .hero-accent{
+    width:74px; height:4px; margin:.75rem auto 0; border-radius:999px;
+    background:linear-gradient(90deg,var(--brand-grad-a),var(--brand-grad-b)); opacity:.95;
+  }
+
+  /* Section headings */
+  .section-head{ text-align:center; margin:0 0 .9rem 0; }
+  .section-title{
+    margin:0; font-weight:700; letter-spacing:0; color:var(--ink);
+    font-size:clamp(1.2rem,.9vw + 1rem,1.6rem); line-height:1.25;
+  }
+  .section-sub{ margin:.25rem 0 0; font-weight:600; color:#64748b; font-size:.98rem; }
+  .section-accent{
+    width:64px; height:4px; margin:.5rem auto 0; border-radius:999px;
+    background:linear-gradient(90deg,var(--brand-grad-a),var(--brand-grad-b));
+  }
+
+  /* Choice buttons */
+  .choice-buttons{ display:flex; justify-content:center; gap:18px; margin-top:26px; flex-wrap:wrap; }
+  .choice-btn{
+    height:56px; min-width:320px; padding:0 24px; font-size:1.02rem; font-weight:700;
+    cursor:pointer; border:0; border-radius:14px; color:var(--ink);
+    letter-spacing:.2px; display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    box-shadow:0 8px 20px rgba(2,6,23,.10), inset 0 -1px 0 rgba(2,6,23,.08);
+    transition:transform .15s ease, filter .2s ease, box-shadow .2s ease;
+  }
+  .choice-btn:hover{ transform:translateY(-1px); }
+  .choice-btn:active{ transform:translateY(0); box-shadow:0 6px 16px rgba(2,6,23,.12), inset 0 -1px 0 rgba(2,6,23,.12); }
+  .choice-btn:focus-visible{
+    outline:3px solid #fff; outline-offset:2px;
+    box-shadow:0 0 0 4px rgba(59,130,246,.35), 0 8px 18px rgba(2,6,23,.12);
+  }
+  .btn-specific{ background:linear-gradient(135deg,#d1fae5,#86efac); }
+  .btn-explore{  background:linear-gradient(135deg,#dbeafe,#93c5fd); }
+
+  /* Sections & motion */
+  .section{ display:none; background:inherit; padding:80px 20px 20px; position:relative; }
+  #tableFilterSection, #exploreFilterSection{ min-height:800px; padding-bottom:200px; }
+  @keyframes slideInLeft{ from{transform:translateX(-100%);opacity:0} to{transform:translateX(0);opacity:1} }
+  @keyframes slideInRight{ from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+  @keyframes slideOutLeft{ from{transform:translateX(0);opacity:1} to{transform:translateX(-100%);opacity:0} }
+  @keyframes slideOutRight{ from{transform:translateX(0);opacity:1} to{transform:translateX(100%);opacity:0} }
+  .slide-left{ animation:slideInLeft .5s ease forwards; }
+  .slide-right{ animation:slideInRight .5s ease forwards; }
+  .slide-out-left{ animation:slideOutLeft .45s ease forwards; }
+  .slide-out-right{ animation:slideOutRight .45s ease forwards; }
+  @media (prefers-reduced-motion:reduce){
+    .interactive-container,.choice-btn,.slide-left,.slide-right,.slide-out-left,.slide-out-right{
+      transition:none!important; animation:none!important; transform:none!important;
+    }
+  }
+
+  /* Back buttons */
+  .back-btn, .back-btn-right{
+    position:fixed; top:10px; padding:10px 20px; border:0; border-radius:8px;
+    background:linear-gradient(45deg,var(--brand-grad-a),var(--brand-grad-b));
+    color:var(--ink); font-weight:600; cursor:pointer; z-index:3000; transition:transform .2s ease;
+  }
+  .back-btn{ left:10px; } .back-btn-right{ right:10px; }
+  .back-btn:hover, .back-btn-right:hover{ transform:scale(1.03); }
+
+  /* Tables */
+  #tableContainer{ margin-top:20px; overflow-x:auto; }
+  table.dataTable thead th{
+    background:#eef2ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-weight:700; color:var(--ink-2);
+  }
+  table.dataTable td{ white-space:normal; word-wrap:break-word; }
+  table.dataTable{ width:100%!important; table-layout:fixed; }
+  .dataTables_wrapper{ width:100%!important; box-sizing:border-box; }
+
+  /* Spinner */
+  #spinner{ display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5000; }
+  .spinner-border{
+    width:3rem; height:3rem; border:.25em solid #e5e7eb; border-top-color:#60a5fa;
+    border-radius:50%; animation:spin .75s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg) } }
+
+  /* Overview panel */
+  #tableOverview, #exploreTableOverview{
+    margin-bottom:20px; background:#ecfdf5; border:1px solid #d1fae5; border-radius:8px; padding:10px; font-size:1.05em;
+  }
+
+  /* Plot area */
+  .mt-4{ margin-top:1rem; }
+</style>
+
+<!-- Spinner -->
+<div id="spinner"><div class="spinner-border"></div></div>
+
+<!-- Choice Screen -->
+<div id="choiceContainer" class="choice-container interactive-container">
+  <h1 class="hero-title">
+    <span class="brand">Welcome to</span>
+    <span class="pill">Avi-SCFA</span>
+    <span class="note">(Short-Chain Fatty Acids)</span>
+    <span class="tagline">Do you have a query?</span>
+  </h1>
+  <div class="hero-accent"></div>
+
+  <div class="choice-buttons">
+    <button id="btnSpecific" class="choice-btn btn-specific">I have a specific query</button>
+    <button id="btnExplore"  class="choice-btn btn-explore">Explore data</button>
+  </div>
+
+  <div class="container mt-5 text-center">
+    <br>
+    <a href="{% url 'isabrown_detailv2' %}" class="btn btn-secondary modern-btn">Back to Omic Selection</a>
+  </div>
+</div>
+
+<!-- Specific Query Section -->
+<div id="sunburstSection" class="section interactive-container">
+  <button class="back-btn" id="backFromSunburst">Back</button>
+
+  <!-- Variable Input -->
+  <div id="searchBox" class="interactive-container">
+    <div class="section-head">
+      <p class="section-title">Select an SCFA</p>
+      <p class="section-sub">Search or choose the SCFA to analyze</p>
+      <div class="section-accent"></div>
+    </div>
+    <input type="text" id="bacteriaSearch" name="bacteriaSearch" autocomplete="off" list="otuList"
+           placeholder="e.g. Butyric acid, Propionate"
+           style="padding:10px; width:300px; margin-top:10px; font-size:1em;">
+    <datalist id="otuList">
+      {% for otu in otu_list %}
+        <option value="{{ otu }}"></option>
+      {% endfor %}
+    </datalist>
+  </div>
+
+  <!-- Omics Selection -->
+  <div id="omicsChoiceContainer" class="interactive-container" style="display:none;">
+    <div class="section-head">
+      <p class="section-title">Choose a Matching Omic</p>
+      <p class="section-sub">Match your SCFA with another omic</p>
+      <div class="section-accent"></div>
+    </div>
+    <select id="omicsChoice" name="omicsChoice" style="padding:10px; width:300px; margin-top:10px; font-size:1em;">
+      <option value="" disabled selected>--Select Omic--</option>
+      <option value="otu">Otu</option>
+      <option value="metab">Metabolomic</option>
+      <option value="acid">Acid</option>
+      <option value="functionnal">Functionnal</option>
+      <option value="ileum">Ileum</option>
+      <option value="muscle">Muscle</option>
+      <option value="liver">Liver</option>
+    </select>
+  </div>
+
+  <!-- Composition toggle -->
+  <div id="toggleComposition" class="interactive-container" style="display:none;">
+    <div class="section-head">
+      <p class="section-title">Composition by Peak Area</p>
+      <p class="section-sub">Show / hide the interactive composition chart</p>
+      <div class="section-accent"></div>
+    </div>
+    <button id="toggleCompositionBtn" type="button" class="choice-btn btn-explore" style="min-width:unset;">Toggle Composition</button>
+  </div>
+
+  <!-- Composition view -->
+  <div id="compositionView" style="display:none;">
+    <div id="id_top-samples" class="mt-4" style="margin:0 auto; text-align:center;">
+      <h2 class="section-title" style="margin-bottom:.25rem;">Samples by Peak Area</h2>
+      <div class="section-accent"></div>
+      <div id="id_top-samples-plot" style="width:900px; height:600px;">
+        {{ top_samples_plot|safe }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Filter Section -->
+  <div id="tableFilterSection" class="interactive-container" style="display:none;">
+    <div class="section-head">
+      <p class="section-title">Optimize Your Data Display</p>
+      <div class="section-accent"></div>
+    </div>
+
+    <div id="tableOverview" style="display:none;">
+      <h4 style="margin:.25rem 0 .25rem; text-align:center;">Overview Statistics</h4>
+      <p id="overviewStats" style="margin:0;"></p>
+    </div>
+
+    <div id="specificResultsInfo" style="margin-bottom:10px; font-weight:bold; text-align:center;"></div>
+
+    <div style="text-align:center;">
+      <label>Coefficient Range:</label>
+      <input type="number" id="corrMin" value="-5" step="0.1" style="width:70px;"> to
+      <input type="number" id="corrMax" value="5" step="0.1" style="width:70px;">
+      <br><br>
+      <label>Minimum Accuracy:</label>
+      <input type="number" id="minAccuracy" value="0" step="0.0001" style="width:70px;">
+      <br><br>
+      <button id="filterTableButton" title="Click each time you select a different variable"
+              class="choice-btn btn-specific" style="min-width:unset;">Explore Data</button>
+    </div>
+
+    <div id="tableContainer" style="margin-top:20px;">
+      <table id="resultsTable" class="display" style="width:100%; margin:0 auto;">
+        <thead>
+          <tr>
+            <th title="Selected omic category, Predicted variable">Selected Omic</th>
+            <th title="Variable chosen by the user for analysis">Selected Variable</th>
+            <th title="Correlation coefficient">Coeff</th>
+            <th title="Minimum value of the coefficient set">MinCoeff</th>
+            <th title="Maximum value of the coefficient set">MaxCoeff</th>
+            <th title="Overall rate of correct predictions by the model">Accuracy</th>
+            <th title="P-value of the coefficient">Pvalue</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Explore Section -->
+<div id="exploreSection" class="section interactive-container">
+  <button class="back-btn-right" id="backFromFullInterface">Back</button>
+
+  <div id="exploreTissueSelection" class="interactive-container" style="margin-top:20px;">
+    <div class="section-head">
+      <p class="section-title">Step 1: Select an Omic</p>
+      <p class="section-sub">Choose the omic to match with your SCFA</p>
+      <div class="section-accent"></div>
+    </div>
+    <select id="exploreTissueChoice" name="exploreTissueChoice"
+            style="padding:10px; width:300px; margin-top:10px; font-size:1em;">
+      <option value="" disabled selected>--Select Omic--</option>
+      <option value="otu">Otu</option>
+      <option value="metab">Metabolomic</option>
+      <option value="acid">Acid</option>
+      <option value="functionnal">Functionnal</option>
+      <option value="ileum">Ileum</option>
+      <option value="muscle">Muscle</option>
+      <option value="liver">Liver</option>
+    </select>
+    <button id="exploreLoadData" class="choice-btn btn-explore" style="margin-left:10px; min-width:unset;">
+      Load Distribution
+    </button>
+  </div>
+
+  <div id="exploreCorrelationDistribution" class="interactive-container" style="display:none; margin-top:20px;">
+    <div class="section-head">
+      <p class="section-title">Step 2: Coefficient Distribution</p>
+      <div class="section-accent"></div>
+    </div>
+    <div id="correlationHistogram" style="width:100%; height:400px;"></div>
+  </div>
+
+  <div id="exploreFilterSection" class="interactive-container" style="display:none; margin-top:20px;">
+    <div class="section-head">
+      <p class="section-title">Step 3: Filter & Explore Data</p>
+      <div class="section-accent"></div>
+    </div>
+
+    <div id="exploreTableOverview">
+      <h4 style="margin:.25rem 0 .25rem; text-align:center;">Overview Statistics</h4>
+      <p id="exploreOverviewStats" style="margin:0;"></p>
+    </div>
+
+    <div id="exploreResultsInfo" style="margin-bottom:10px; font-weight:bold; text-align:center;"></div>
+
+    <div style="text-align:center;">
+      <label>Coefficient Range:</label>
+      <input type="number" id="exploreCorrMin" value="-5" step="0.1" style="width:70px;"> to
+      <input type="number" id="exploreCorrMax" value="5" step="0.1" style="width:70px;">
+      <br><br>
+      <label>Minimum Accuracy:</label>
+      <input type="number" id="exploreMinAccuracy" value="0" step="0.0001" style="width:70px;">
+      <br><br>
+      <button id="exploreFilterButton" class="choice-btn btn-specific" style="min-width:unset;">
+        Explore Data
+      </button>
+    </div>
+
+    <div id="exploreTableContainer" style="margin-top:20px;">
+      <table id="exploreResultsTable" class="display" style="width:100%; margin:0 auto;">
+        <thead>
+          <tr>
+            <th title="Selected omic category, Predicted variable">Selected Omic</th>
+            <th title="Full Variable">Full Variable</th>
+            <th title="Correlation coefficient">Coeff</th>
+            <th title="Minimum value of the coefficient set">MinCoeff</th>
+            <th title="Maximum value of the coefficient set">MaxCoeff</th>
+            <th title="Overall rate of correct predictions by the model">Accuracy</th>
+            <th title="P-value of the coefficient">Pvalue</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- JS libs -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<script>
+  // On load: reset + hide
+  window.onload = function(){
+    const setVal = (id, v) => { const el=document.getElementById(id); if(el) el.value=v; };
+    const hide = id => { const el=document.getElementById(id); if(el) el.style.display="none"; };
+
+    setVal("bacteriaSearch","");
+    const oc = document.getElementById("omicsChoice"); if(oc) oc.selectedIndex=0;
+    setVal("corrMin","-5"); setVal("corrMax","5"); setVal("minAccuracy","0");
+
+    hide("tableFilterSection"); hide("tableOverview");
+    $("#resultsTable tbody").html("");
+  };
+
+  // Navigation
+  const choiceContainer = document.getElementById("choiceContainer");
+  const sunburstSection = document.getElementById("sunburstSection");
+  const exploreSection  = document.getElementById("exploreSection");
+  const btnSpecific = document.getElementById("btnSpecific");
+  const btnExplore  = document.getElementById("btnExplore");
+  const backFromSunburst = document.getElementById("backFromSunburst");
+  const backFromFullInterface = document.getElementById("backFromFullInterface");
+
+  btnSpecific.addEventListener("click", () => {
+    choiceContainer.classList.add("slide-out-left");
+    setTimeout(() => {
+      choiceContainer.style.display="none";
+      choiceContainer.classList.remove("slide-out-left");
+      sunburstSection.style.display="block";
+      sunburstSection.classList.add("slide-left");
+    }, 500);
+  });
+  btnExplore.addEventListener("click", () => {
+    choiceContainer.classList.add("slide-out-right");
+    setTimeout(() => {
+      choiceContainer.style.display="none";
+      choiceContainer.classList.remove("slide-out-right");
+      exploreSection.style.display="block";
+      exploreSection.classList.add("slide-right");
+    }, 500);
+  });
+  backFromSunburst.addEventListener("click", () => {
+    sunburstSection.classList.add("slide-out-left");
+    setTimeout(() => {
+      sunburstSection.style.display="none";
+      sunburstSection.classList.remove("slide-out-left");
+      choiceContainer.style.display="flex";
+      choiceContainer.style.flexDirection="column";
+      choiceContainer.classList.add("slide-left");
+      setTimeout(()=>choiceContainer.classList.remove("slide-left"),500);
+    }, 500);
+  });
+  backFromFullInterface.addEventListener("click", () => {
+    exploreSection.classList.add("slide-out-right");
+    setTimeout(() => {
+      exploreSection.style.display="none";
+      exploreSection.classList.remove("slide-out-right");
+      choiceContainer.style.display="flex";
+      choiceContainer.style.flexDirection="column";
+      choiceContainer.classList.add("slide-right");
+      setTimeout(()=>choiceContainer.classList.remove("slide-right"),500);
+    }, 500);
+  });
+
+  // Input show/hide
+  const omicsChoice = document.getElementById("omicsChoice");
+  const bacteriaSearch = document.getElementById("bacteriaSearch");
+  const omicsChoiceContainer = document.getElementById("omicsChoiceContainer");
+
+  bacteriaSearch.addEventListener("input", function(){
+    const tComp = document.getElementById("toggleComposition");
+    if (bacteriaSearch.value.trim() !== ""){
+      omicsChoiceContainer.style.display="block";
+      if (omicsChoice.value.trim() !== ""){
+        if (tComp) tComp.style.display="block";
+        document.getElementById("tableFilterSection").style.display="block";
+      }
+    } else {
+      omicsChoiceContainer.style.display="none";
+      if (tComp) tComp.style.display="none";
+      document.getElementById("tableFilterSection").style.display="none";
+    }
+  });
+
+  omicsChoice.addEventListener("change", function(){
+    const tComp = document.getElementById("toggleComposition");
+    if (omicsChoice.value.trim() !== ""){
+      if (bacteriaSearch.value.trim() !== ""){
+        if (tComp) tComp.style.display="block";
+        document.getElementById("tableFilterSection").style.display="block";
+      }
+    } else {
+      if (tComp) tComp.style.display="none";
+      document.getElementById("tableFilterSection").style.display="none";
+    }
+  });
+
+  // Toggle composition
+  const compBtn  = document.getElementById('toggleCompositionBtn');
+  const compView = document.getElementById('compositionView');
+  if (compBtn && compView){
+    compBtn.addEventListener('click', () => {
+      const hidden = (compView.style.display === 'none' || compView.style.display === '');
+      compView.style.display = hidden ? 'block' : 'none';
+    });
+  }
+
+  // Helpers
+  function showSpinner(v){ const sp=document.getElementById('spinner'); if(sp) sp.style.display=v?'block':'none'; }
+
+  // Specific table
+  let resultsTable;
+  const filterTableButton = document.getElementById("filterTableButton");
+  const specificResultsInfo = document.getElementById("specificResultsInfo");
+
+  filterTableButton.addEventListener("click", function(){
+    showSpinner(true);
+    const tissue   = document.getElementById("omicsChoice").value;
+    const variable = document.getElementById("bacteriaSearch").value.trim();
+    const minCorr  = document.getElementById("corrMin").value;
+    const maxCorr  = document.getElementById("corrMax").value;
+    const accuracy = parseFloat((document.getElementById("minAccuracy").value || "0")) || 0;
+
+    const url = window.location.pathname + `?table_filter=1&tissue=${encodeURIComponent(tissue)}`
+              + `&variable=${encodeURIComponent(variable)}&correlation_min=${minCorr}`
+              + `&correlation_max=${maxCorr}&accuracy=${accuracy}`;
+
+    fetch(url, { headers:{ "X-Requested-With":"XMLHttpRequest" } })
+      .then(r => r.json())
+      .then(data => {
+        showSpinner(false);
+        if (data.error){ alert(data.error); return; }
+
+        const totalCount = (typeof data.total_count === 'number') ? data.total_count : (data.results || []).length;
+        const rows = (data.results || []).map(it => [
+          it.var1, it.var2, it.Coefficient, it.min_val, it.max_val, it.accuracy, it.pvalue
+        ]);
+        specificResultsInfo.innerHTML = `Found <b>${totalCount}</b> total results, showing <b>${rows.length}</b>.`;
+
+        if (resultsTable){
+          resultsTable.clear().rows.add(rows).draw();
+        } else {
+          resultsTable = $("#resultsTable").DataTable({
+            data: rows,
+            columns: [
+              { title:"Selected Omic", width:"150px" },
+              { title:"Selected Variable", width:"190px" },
+              { title:"Coeff", width:"60px" },
+              { title:"MinCoeff", width:"80px" },
+              { title:"MaxCoeff", width:"80px" },
+              { title:"Accuracy", width:"80px" },
+              { title:"Pvalue", width:"70px" }
+            ],
+            pageLength:100, order:[[2,"desc"]], autoWidth:false,
+            dom:'<"top"pBf>rt<"bottom"lip><"clear">',
+            buttons:[{ extend:'csvHtml5', title:'Filtered_Results', exportOptions:{ columns:':visible' } }]
+          });
+        }
+
+        if (data.overview && data.overview.median !== null){
+          document.getElementById("overviewStats").innerHTML =
+            `Median: ${Number(data.overview.median).toFixed(4)} | ` +
+            `Q1: ${Number(data.overview.q1).toFixed(4)} | ` +
+            `Q3: ${Number(data.overview.q3).toFixed(4)}`;
+          document.getElementById("tableOverview").style.display="block";
+        } else {
+          document.getElementById("tableOverview").style.display="none";
+        }
+      })
+      .catch(err => { showSpinner(false); console.error(err); alert("An error occurred while filtering the table."); });
+  });
+
+  // Explore distribution
+  const exploreLoadDataBtn = document.getElementById("exploreLoadData");
+  const exploreCorrelationDistribution = document.getElementById("exploreCorrelationDistribution");
+  const exploreFilterSection = document.getElementById("exploreFilterSection");
+
+  exploreLoadDataBtn.addEventListener("click", function(){
+    const tissueVal = (document.getElementById("exploreTissueChoice").value || "").toLowerCase();
+    showSpinner(true);
+
+    fetch(window.location.pathname + `?explore_distribution=1&tissue=${encodeURIComponent(tissueVal)}`, {
+      headers:{ "X-Requested-With":"XMLHttpRequest" }
+    })
+    .then(r => r.json())
+    .then(data => {
+      showSpinner(false);
+      if (!data.distribution || !data.distribution.correlation_values){
+        alert("Server returned unexpected data format."); return;
+      }
+      const histogramData = [{ x:data.distribution.correlation_values, type:"histogram" }];
+      Plotly.newPlot("correlationHistogram", histogramData, {
+        title:"Coefficient Distribution",
+        xaxis:{ title:"Coefficient Value" },
+        yaxis:{ title:"Count" }
+      });
+      exploreCorrelationDistribution.style.display="block";
+      exploreFilterSection.style.display="block";
+    })
+    .catch(err => { showSpinner(false); console.error(err); alert("Failed to load data."); });
+  });
+
+  // Explore table
+  let exploreResultsTable;
+  const exploreFilterButton = document.getElementById("exploreFilterButton");
+  const exploreResultsInfo  = document.getElementById("exploreResultsInfo");
+  const exploreOverviewStats= document.getElementById("exploreOverviewStats");
+
+  exploreFilterButton.addEventListener("click", function(){
+    const tissue      = document.getElementById("exploreTissueChoice").value;
+    const minCorr     = document.getElementById("exploreCorrMin").value;
+    const maxCorr     = document.getElementById("exploreCorrMax").value;
+    const minAccuracy = document.getElementById("exploreMinAccuracy").value;
+
+    showSpinner(true);
+    const url = window.location.pathname
+      + `?explore_table_filter=1&tissue=${encodeURIComponent(tissue)}`
+      + `&corrMin=${minCorr}&corrMax=${maxCorr}&accuracy=${minAccuracy}`;
+
+    fetch(url, { headers:{ "X-Requested-With":"XMLHttpRequest" } })
+      .then(r => r.json())
+      .then(data => {
+        showSpinner(false);
+        if (!data.results){ alert("Server returned unexpected data format."); return; }
+
+        const totalCount = (typeof data.total_count === 'number') ? data.total_count : (data.results || []).length;
+        const shownCount = (typeof data.shownCount === 'number') ? data.shownCount : (data.results || []).length;
+        exploreResultsInfo.innerHTML = `Found <b>${totalCount}</b> total results, showing <b>${shownCount}</b>.`;
+
+        const rows = (data.results || []).map(it => [
+          it.var1, it.var2, it.correlation, it.min_val, it.max_val, it.accuracy, it.pvalue
+        ]);
+
+        if (exploreResultsTable){
+          exploreResultsTable.clear().rows.add(rows).draw();
+        } else {
+          exploreResultsTable = $("#exploreResultsTable").DataTable({
+            data: rows,
+            columns: [
+              { title:"Selected Omic", width:"150px" },
+              { title:"Full Variable", width:"190px" },
+              { title:"Coeff", width:"60px" },
+              { title:"MinCoeff", width:"80px" },
+              { title:"MaxCoeff", width:"80px" },
+              { title:"Accuracy", width:"80px" },
+              { title:"Pvalue", width:"70px" }
+            ],
+            pageLength:100, order:[[2,"desc"]], autoWidth:false,
+            dom:'<"top"pBf>rt<"bottom"lip><"clear">',
+            buttons:[{ extend:'csvHtml5', title:'Filtered_Results', exportOptions:{ columns:':visible' } }]
+          });
+        }
+
+        if (data.overview && data.overview.median !== null){
+          exploreOverviewStats.innerHTML =
+            `Median: ${Number(data.overview.median).toFixed(4)} | ` +
+            `Q1: ${Number(data.overview.q1).toFixed(4)} | ` +
+            `Q3: ${Number(data.overview.q3).toFixed(4)}`;
+        } else {
+          exploreOverviewStats.innerHTML = "";
+        }
+      })
+      .catch(err => { showSpinner(false); console.error(err); alert("Failed to filter data."); });
+  });
+</script>
+{% endblock %}

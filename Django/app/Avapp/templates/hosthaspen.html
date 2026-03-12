@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block block-body-content %}
+{% load static %}
+
+    <title>Host</title>
+<body>
+    <center>
+        <H1> Fetching records Host using django </H1>
+        <a href="http://127.0.0.1:8000/avapp/">Back to the main page app</a><br>
+ <div style="overflow-x:auto;">
+    <table border="1" style="border-collapse: collapse; width: 100%;">
+        <tr>
+                <th> IdHost </th>
+                <th> Tag </th>
+                <th> Sex </th>
+                <th> GrowthRoom</th>
+                <th> Study_idStudy</th>
+                <th> Weight</th>
+                <th> Pen</th>
+                <th> IdSample</th>
+                <th> CollectionDate</th>
+                <th> SampleName</th>
+                <th> SampleType</th>
+
+            </tr>
+            {% if hosthaspen.exists %}
+                <tr>
+                    {% for result in hosthaspen %}
+                    <td>{{result.host_idhost.idhost}}</td>
+                    <td>{{result.host_idhost.tag}}</td>
+                    <td>{{result.host_idhost.sex}}</td>
+                    <td>{{result.host_idhost.growthroom}}</td>
+                    <td>{{result.host_idhost.study_idstudy}}</td>
+                           {% if result.host_idhost.weight %}
+                    <td>{{result.host_idhost.weight}}</td>
+                     {% else %}
+                    <td><center>-</center></td>
+                    {% endif %}
+                    <td><a href="http://127.0.0.1:8000/avapp/pen/{{result.pen_idpen.idpen}}" >{{result.pen_idpen.idpen}}</a></td>
+                    {% endfor %}
+                     {% if samples.exists %}
+                       {% for result in samples %}
+                       <td>{{result.idsample}}</td>
+                    <td>{{result.collectiondate}}</td>
+                    <td>{{result.samplename}}</td>
+                       <td>{{result.sampletype}}</td></tr>
+                            <td colspan="7"></td>
+
+                    {% endfor %}
+                        {% else %}
+                       <td><center>-</center></td>
+                       <td><center>-</center></td>
+                       <td><center>-</center></td>
+                       <td><center>-</center></td>
+                       {% endif %}
+                </tr>
+             {% else %}
+                   <tr>
+                    <td>{{dataHost.idhost}}</td>
+                    <td>{{dataHost.tag}}</td>
+                    <td>{{dataHost.sex}}</td>
+                    <td>{{dataHost.growthroom}}</td>
+                    <td>{{dataHost.study_idstudy.idstudy}}</td>
+                      {% if dataHost.weight %}
+                    <td>{{dataHost.weight}}</td>
+                     {% else %}
+                    <td><center>-</center></td>
+                    {% endif %}
+                    <td> No Pen</td>
+                       {% if samples.exists %}
+                       {% for result in samples %}
+                       <td>{{result.idsample}}</td>
+                    <td>{{result.collectiondate}}</td>
+                    <td>{{result.samplename}}</td>
+                       <td>{{result.sampletype}}</td></tr>
+                            <td colspan="7"></td>
+
+                    {% endfor %}
+                        {% else %}
+                       <td><center>-</center></td>
+                       <td><center>-</center></td>
+                       <td><center>-</center></td>
+                       <td><center>-</center></td>
+                       {% endif %}
+
+                </tr>
+                {% endif %}
+        </table>
+
+ </div>
+    </center>
+
+<script>
+function goBack() {
+  // Save the current URL in localStorage
+  localStorage.setItem('previousUrl', window.location.href);
+  // Go back to the previous page
+  window.history.back();
+}
+</script>
+
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Streamlit Link</title>
+</head>
+<body>
+    <h2>Streamlit App</h2>
+    <iframe id="streamlit-iframe" src="http://127.0.0.1:8507" width="800" height="600"></iframe>
+
+    <!-- JavaScript to communicate with Streamlit app -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const iframe = document.getElementById('streamlit-iframe');
+
+        // Function to send data to Streamlit app
+        function sendDataToStreamlit(data) {
+            iframe.contentWindow.postMessage(data, 'http://127.0.0.1:8507');
+        }
+
+        // Fetch data from Django view using jQuery
+        $.get("{% url 'send_data_to_streamlit' %}", function(data) {
+            sendDataToStreamlit(data);
+        });
+    </script>
+</body>
+</html>

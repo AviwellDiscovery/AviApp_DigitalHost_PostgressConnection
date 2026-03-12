@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+    <title>Analysis</title>
+
+    <center>
+        <H1> Fetching records Analysis </H1>
+        <a href="http://127.0.0.1:8000/avapp/">Back to the app</a>
+        <table border="1">
+            <tr>
+                <th> Analysis Id</th>
+                <th> Analysis Name</th>
+                <th> Set ID </th>
+            </tr>
+            {% for result in dataAnalysis %}
+            <tr>
+                <td>{{result.idanalysis}}</td>
+                <td>{{result.analysisname}}</td>
+                <td>{{result.set_idset.idset}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </center>
+
+
+</body>
+</html>

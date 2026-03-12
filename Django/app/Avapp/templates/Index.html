@@ -1,0 +1,33 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        <link rel="stylesheet" type="text/css" href="{% static 'Avapp/css/style.css' %}">
+    <meta charset="UTF-8">
+    <title>Tables</title>
+</head>
+<body>
+    <center>
+        <H1> Fetching records For AvApp </H1>
+        <table border="1">
+            <a href="http://127.0.0.1:8000/avapp/study">Study</a></br>
+            <a href="http://127.0.0.1:8000/avapp/analysis">Analysis</a></br>
+            <a href="http://127.0.0.1:8000/avapp/feature">Features</a></br>
+            <a href="http://127.0.0.1:8000/avapp/pen">Pen</a></br>
+            <a href="http://127.0.0.1:8000/avapp/host">Host</a></br>
+
+        </table>
+
+    </center>
+
+<script>
+function goBack() {
+  // Save the current URL in localStorage
+  localStorage.setItem('previousUrl', window.location.href);
+  // Go back to the previous page
+  window.history.back();
+}
+</script>
+</body>
+</html>

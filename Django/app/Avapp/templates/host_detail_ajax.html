@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+
+{% if host_type == "chicken" %}
+    <title>Host Detail - {{ host_type|title }}</title>
+
+    <div class="container mt-5">
+        <h1 class="text-center">{{ host_type|title }} Data Analysis</h1>
+        <h2 class="text-center">Chicken test H2</h2>
+        <p class="text-center">Explore detailed data and insights for {{ host_type }}.</p>
+
+        <div class="row mt-4">
+            <!-- Host Image and Description -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <img src="{% static 'Avapp/images/{{ host_type }}.png' %}" class="card-img-top" alt="{{ host_type|title }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ host_type|title }} Overview</h5>
+                        <p class="card-text">
+                            Here you will find the detailed analysis, datasets, and insights for {{ host_type }}.
+                            Click on the links below to explore various options for {{ host_type }}.
+                        </p>
+                    </div>
+                </div>
+<!--                        <form method="GET" action="{% url 'host_detail' %}">-->
+<!--                             <div id="sex_filter-fields" >-->
+<!--            <label for="sex_filter">Sex:</label>-->
+<!--  <select id="sex_filter" name="sex">-->
+<!--    <option value="">&#45;&#45; Select a sex &#45;&#45;</option>-->
+<!--    <option value="M">Male</option>-->
+<!--    <option value="F">Female</option>-->
+<!--  </select>-->
+<!-- <label for="study_filter">Study:</label>-->
+<!--  <h2>Select a Study to View Available Features</h2>-->
+
+<!--    <form id="study-form">-->
+<!--        <label for="study-select">Study:</label>-->
+<!--        <select id="study-select" name="study">-->
+<!--            <option value="">&#45;&#45; Select a study &#45;&#45;</option>-->
+<!--            <option value="3">DISCO</option>-->
+<!--            <option value="4">POC1</option>-->
+<!--            <option value="5">POC2</option>-->
+<!--            &lt;!&ndash; Add more study options if needed &ndash;&gt;-->
+<!--        </select>-->
+<!--    </form>-->
+
+<!--    <div id="features-table-container">-->
+<!--        &lt;!&ndash; Features table will be populated here &ndash;&gt;-->
+<!--    </div>-->
+    <!-- Checkboxes for each study option -->
+<!--    <div>-->
+<!--        <label>-->
+<!--            <input type="checkbox" name="study" value="3" {% if '3' in selected_studies %}checked{% endif %}>-->
+<!--            DISCO-->
+<!--        </label>-->
+<!--    </div>-->
+<!--    <div>-->
+<!--        <label>-->
+<!--            <input type="checkbox" name="study" value="4" {% if '4' in selected_studies %}checked{% endif %}>-->
+<!--            POC1-->
+<!--        </label>-->
+<!--    </div>-->
+<!--    <div>-->
+<!--        <label>-->
+<!--            <input type="checkbox" name="study" value="5" {% if '5' in selected_studies %}checked{% endif %}>-->
+<!--            POC2-->
+<!--        </label>-->
+<!--    </div>-->
+<!--<input type="submit" value="Filter"><br>-->
+<h2>Select One or More Studies to View Available Features</h2>
+
+     <!-- Study selection form -->
+    <form id="study-form">
+        <label>Study:</label>
+        <div>
+            <label>
+                <input type="checkbox" name="study" value="3"> DISCO
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" name="study" value="4"> POC1
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" name="study" value="5"> POC2
+            </label>
+        </div>
+    </form>
+
+    <!-- Container for dynamically loaded features -->
+    <div id="features-table-container">
+        <p>Select a study to load available features.</p>
+    </div>
+
+    <!-- Filter area to dynamically add feature input fields -->
+    <div id="feature-filter-container" style="display:none;">
+        <h3>Select Features to Filter Data</h3>
+        <form id="feature-form">
+            <label for="feature-select">Features:</label>
+            <select id="feature-select" name="feature" multiple>
+                <!-- Options will be populated by AJAX -->
+            </select>
+        </form>
+
+        <div id="selected-features-container">
+            <!-- Dynamic feature input fields will be added here -->
+        </div>
+
+        <button type="button" id="filter-button">Filter Data</button>
+    </div>
+
+    <!-- Include jQuery (required for AJAX) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+   <!-- CSRF token setup for AJAX requests -->
+    <script>
+        // Retrieve the CSRF token from the cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        // Include the CSRF token in AJAX request headers
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+                    // Only send the token to relative URLs i.e. same-origin
+                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                }
+            }
+        });
+        $(document).ready(function() {
+            // Load features based on selected studies
+            $('input[name="study"]').change(function() {
+                let studyIds = $('input[name="study"]:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (studyIds.length > 0) {
+                    $('#features-table-container').html('<p>Loading features for selected studies...</p>');
+
+                    $.ajax({
+                        url: '{% url "get_features_by_study" %}',
+                        data: { 'study_ids[]': studyIds },
+                        traditional: true,
+                        success: function(data) {
+                            let featureSelectHtml = '';
+                            data.forEach(function(feature) {
+                                featureSelectHtml += '<option value="' + feature.id + '">' + feature.name + '</option>';
+                            });
+                            $('#feature-select').html(featureSelectHtml);  // Populate the feature dropdown
+                            $('#feature-filter-container').show();  // Show the filter area
+                            $('#features-table-container').html('<p>Features loaded. Select features to filter data.</p>');
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("AJAX Error: ", status, error);
+                            $('#features-table-container').html('<p>An error occurred while loading features.</p>');
+                        }
+                    });
+                } else {
+                    $('#features-table-container').html('<p>Please select one or more studies to view available features.</p>');
+                    $('#feature-filter-container').hide();
+                }
+            });
+
+            // When user selects features, add input fields for each selected feature
+            $('#feature-select').change(function() {
+                let selectedFeatures = $(this).val();
+                let container = $('#selected-features-container');
+                container.empty();
+
+                selectedFeatures.forEach(function(featureId) {
+                    // Add an input for each selected feature with range options
+                    container.append(`
+                        <div class="feature-input" data-feature-id="${featureId}">
+                            <label>Value/Range for Feature ID ${featureId}:</label>
+                            <input type="text" name="feature_${featureId}_min" placeholder="Min value" />
+                            <input type="text" name="feature_${featureId}_max" placeholder="Max value" />
+                        </div>
+                    `);
+                });
+            });
+
+            // Filter data based on selected features and their values
+            $('#filter-button').click(function() {
+                // Collect feature ID and value/range data
+                let filters = [];
+                $('#selected-features-container .feature-input').each(function() {
+                    let featureId = $(this).data('feature-id');
+                    let minValue = $(this).find('input[name="feature_' + featureId + '_min"]').val();
+                    let maxValue = $(this).find('input[name="feature_' + featureId + '_max"]').val();
+
+                    filters.push({ feature_id: featureId, min: minValue, max: maxValue });
+                });
+
+                $('#features-table-container').html('<p>Applying filters...</p>');
+
+                $.ajax({
+                    url: '{% url "filter_data_by_features" %}',
+                    type: 'POST',
+                    data: JSON.stringify({ filters: filters }),
+                    contentType: 'application/json',
+                    success: function(data) {
+                        let tableHtml = '<h3>Filtered Data Results</h3>';
+                        tableHtml += '<table><thead><tr>';
+
+                        // Add table headers
+                        Object.keys(data[0]).forEach(function(key) {
+                            tableHtml += '<th>' + key + '</th>';
+                        });
+                        tableHtml += '</tr></thead><tbody>';
+
+                        // Add table rows
+                        data.forEach(function(row) {
+                            tableHtml += '<tr>';
+                            Object.values(row).forEach(function(value) {
+                                tableHtml += '<td>' + value + '</td>';
+                            });
+                            tableHtml += '</tr>';
+                        });
+
+                        tableHtml += '</tbody></table>';
+                        $('#features-table-container').html(tableHtml);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error: ", status, error);
+                        $('#features-table-container').html('<p>An error occurred while filtering data.</p>');
+                    }
+                });
+            });
+        });
+    </script>
+</form>
+
+     {% if dataHost.exists %}
+                <td> {{lenhost}} Results found. </td>
+            {% else %}
+                <td> No result founded.</td>
+            {% endif %}
+
+<!--<form method="GET" action="{% url 'analysis' %}">-->
+<!--    <input type="checkbox" id="select-all">-->
+<!--<label for="select-all">Select All</label><br><br>-->
+
+<!--<table border="1" style="border-collapse: collapse; width: 100%;">-->
+<!--    <tr>-->
+<!--        <th><center></center></th>-->
+<!--        <th><center>IdHost</center></th>-->
+<!--        <th><center>Tag</center></th>-->
+<!--        <th><center>Sex</center></th>-->
+<!--        <th><center>GrowthRoom</center></th>-->
+<!--        <th><center>Study_idStudy</center></th>-->
+<!--        <th><center>Weight</center></th>-->
+<!--    </tr>-->
+<!--    {% for result in dataHost %}-->
+<!--    <tr>-->
+<!--        <td><input type="checkbox" name="selected_hosts" value="{{ result.idhost }}"></td>-->
+<!--        <td><center><a href="http://127.0.0.1:8000/avapp/host/{{ result.idhost }}">{{ result.idhost }}</a></center></td>-->
+<!--        <td><center>{{ result.tag }}</center></td>-->
+<!--        <td><center>{{ result.sex }}</center></td>-->
+<!--        <td><center>{{ result.growthroom }}</center></td>-->
+<!--        <td><center>{{ result.study_idstudy.idstudy }}</center></td>-->
+<!--        {% if result.weight == '{}' %}-->
+<!--        <td><center>No Record</center></td>-->
+<!--        {% else %}-->
+<!--        <td><center>{{ result.weight }}</center></td>-->
+<!--        {% endif %}-->
+<!--    </tr>-->
+<!--    {% endfor %}-->
+<!--</table><br>-->
+
+
+        <button type="submit" class="btn btn-primary">Show Host Related Infos</button>
+        </form>
+            </div>
+
+            <!-- Host Analysis Options -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Analysis Options</h5>
+                        <ul>
+                            <li><a href="#">Genomic Data</a></li>
+                            <li><a href="#">Taxonomic Insights</a></li>
+                            <li><a href="#">Health Data</a></li>
+                            <li><a href="#">Environmental Impact</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{% url 'DigitalHost' %}" class="btn btn-secondary">Back to Digital Host Selection</a>
+        </div>
+    </div>
+{% else %}
+<title>Host Detail - {{ host_type|title }}</title>
+
+    <div class="container mt-5">
+        <h1 class="text-center">{{ host_type|title }} Data Analysis</h1>
+        <p class="text-center">Explore detailed data and insights for {{ host_type }}.</p>
+
+        <div class="row mt-4">
+            <!-- Host Image and Description -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <img src="{% static 'Avapp/images/{{ host_type }}.png' %}" class="card-img-top" alt="{{ host_type|title }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ host_type|title }} Overview</h5>
+                        <p class="card-text">
+                            Here you will find the detailed analysis, datasets, and insights for {{ host_type }}.
+                            Click on the links below to explore various options for {{ host_type }}.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Host Analysis Options -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Analysis Options</h5>
+                        <ul>
+                            <li><a href="#">Genomic Data</a></li>
+                            <li><a href="#">Taxonomic Insights</a></li>
+                            <li><a href="#">Health Data</a></li>
+                            <li><a href="#">Environmental Impact</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{% url 'DigitalHost' %}" class="btn btn-secondary">Back to Digital Host Selection</a>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

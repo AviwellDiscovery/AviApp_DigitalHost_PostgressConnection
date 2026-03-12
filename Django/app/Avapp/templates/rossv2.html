@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+
+<div class="container mt-5">
+
+    <!-- Main Header Message -->
+    <div class="text-center my-4">
+            <h1 class="main-title">AVI-ROSS Model</h1>
+        <h3 class="sub-title">Choose Your Omic</h3>
+    </div>
+
+    <!-- Omics Options by Section (Each in a Styled Cadre) -->
+    <div class="row">
+        <!-- AVI-Bacterias Section -->
+        <div class="col-md-4">
+            <div class="section-container">
+                <h4 class="section-header">AVI-Bacterias</h4>
+                <div class="option-card mb-2">
+                    <a href="{% url 'process_databacteryv2_ross' 'rossv2' 'bacterien' %}">
+                        <div class="card border-0 pointer">
+                            <div class="card-img-container">
+                                <img src="{% static 'Avapp/images/bacterie.png' %}" class="card-img-top dp-img img-fluid" alt="AVI-Diversity">
+                                <div class="overlay-text">AVI-Diversity</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+<!--                <div class="option-card mb-2">-->
+<!--                    <a href="{% url 'process_data_functionnal2' %}">-->
+<!--                        <div class="card border-0 pointer">-->
+<!--                            <div class="card-img-container">-->
+<!--                                <img src="{% static 'Avapp/images/metabolomic_pathway.png' %}" class="card-img-top dp-img img-fluid" alt="AVI-Functional">-->
+<!--                                <div class="overlay-text">AVI-Functional</div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </a>-->
+<!--                </div>-->
+            </div>
+        </div>
+<!--        &lt;!&ndash; AVI-Molecules Section &ndash;&gt;-->
+<!--        <div class="col-md-4">-->
+<!--            <div class="section-container">-->
+<!--                <h4 class="section-header">AVI-Molecules</h4>-->
+<!--                <div class="option-card mb-2">-->
+<!--                    <a href="{% url 'process_data_moleculev2' 'isabrownv2' 'molecule' %}">-->
+<!--                        <div class="card border-0 pointer">-->
+<!--                            <div class="card-img-container">-->
+<!--                                <img src="{% static 'Avapp/images/molecule.png' %}" class="card-img-top dp-img img-fluid" alt="AVI-Molecule">-->
+<!--                                <div class="overlay-text">AVI-Molecule</div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--                <div class="option-card mb-2">-->
+<!--                    <a href="{% url 'process_data_scfa2' %}">-->
+<!--                        <div class="card border-0 pointer">-->
+<!--                            <div class="card-img-container">-->
+<!--                                <img src="{% static 'Avapp/images/scfa.png' %}" class="card-img-top dp-img img-fluid" alt="AVI-SCFA">-->
+<!--                                <div class="overlay-text">AVI-SCFA</div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </a>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+        <!-- AVI-Transcriptomics Section -->
+        <div class="col-md-4">
+            <div class="section-container">
+                <h4 class="section-header">AVI-Transcriptomics</h4>
+                <div class="option-card mb-2">
+<!--                    <a href="{% url 'process_data_ileumv2' %}">-->
+<!--                        <div class="card border-0 pointer">-->
+<!--                            <div class="card-img-container">-->
+<!--                                <img src="{% static 'Avapp/images/chickengut2.png' %}" class="card-img-top dp-img img-fluid" alt="AVI-Ileum">-->
+<!--                                <div class="overlay-text">AVI-Ileum</div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </a>-->
+                </div>
+                <div class="option-card mb-2">
+                    <a href="{% url 'muscle_data_analysisv2_ross' 'rossv2' 'muscle' %}">
+                        <div class="card border-0 pointer">
+                            <div class="card-img-container">
+                                <img src="{% static 'Avapp/images/muscle.png' %}" class="card-img-top dp-img img-fluid" alt="AVI-Muscle">
+                                <div class="overlay-text">AVI-Muscle</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+<!--                <div class="option-card mb-2">-->
+<!--                    <a href="{% url 'process_data_liverv2' %}">-->
+<!--                        <div class="card border-0 pointer">-->
+<!--                            <div class="card-img-container">-->
+<!--                                <img src="{% static 'Avapp/images/liver.png' %}" class="card-img-top dp-img img-fluid" alt="AVI-Liver">-->
+<!--                                <div class="overlay-text">AVI-Liver</div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </a>-->
+<!--                </div>-->
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Navigation Back Section -->
+<div class="container mt-5 text-center">
+    <h1>{{ title }}</h1>
+    <p>{{ description }}</p>
+    <a href="{% url 'DigitalHostv2' %}" class="btn btn-secondary modern-btn">Back to Digital Host Selection</a>
+</div>
+
+<!-- Custom Styles -->
+<style>
+<!--.main-title {-->
+<!--    font-size: 3.2rem;              /* Large size for prominence */-->
+<!--    font-weight: 700;               /* Bold weight */-->
+<!--    letter-spacing: 0.1em;          /* Slightly increased spacing */-->
+<!--    text-transform: uppercase;      /* Uppercase text for impact */-->
+<!--    color: #ffffff;                 /* White text */-->
+<!--    background: linear-gradient(135deg, #a4c639, #8fcf39); /* Dark blue gradient */-->
+<!--    padding: 1rem 1.5rem;           /* Padding around the text */-->
+<!--    border-radius: 8px;             /* Soft rounded corners */-->
+<!--    border: 1px solid rgba(0, 255, 255, 0.3);  /* Subtle neon cyan border */-->
+<!--    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5); /* Neon glow effect */-->
+<!--    text-shadow: 2px 2px 8px rgba(0,0,0,0.6);     /* Depth with a subtle shadow */-->
+<!--    margin-bottom: 2rem;            /* Spacing below the title */-->
+<!--}-->
+
+
+    .sub-title {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(45deg, #a4c639, #8fcf39);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        margin-bottom: 2rem;
+    }
+    /* Section Container Cadre */
+    .section-container {
+        border: 2px solid #a4c639;
+        border-radius: 10px;
+        padding: 15px;
+        background-color: #f9fbe7;
+        margin-bottom: 1.5rem;
+    }
+    /* Section Headers */
+    .section-header {
+        font-size: 1.75rem;
+        font-weight: bold;
+        color: #a4c639;
+        text-align: center;
+        margin-bottom: 1.25rem;
+    }
+    /* Option Cards */
+    .option-card {
+        margin-bottom: 1rem;
+    }
+    .card-img-container {
+        position: relative;
+    }
+    .dp-img {
+        filter: grayscale(100%);
+        border-radius: 15px;
+        border: 2px solid #dee2e6;
+        object-fit: cover;
+        width: 100%;
+        max-height: 200px;
+        transition: transform 0.3s ease, filter 0.3s ease;
+    }
+    .pointer {
+        cursor: pointer;
+    }
+    .dp-img:hover {
+        filter: grayscale(0%);
+        transform: scale(1.02);
+    }
+    .overlay-text {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 5px;
+        text-align: center;
+        font-size: 1rem;
+        border-bottom-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+    }
+    /* Overview Image Styles */
+    .styled-img {
+        filter: grayscale(100%);
+        border-radius: 15px;
+        border: 2px solid #dee2e6;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        object-fit: contain;
+        max-height: 300px;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    .styled-img:hover {
+        filter: grayscale(0%);
+        transform: scale(1.05);
+    }
+    /* Navigation Back Button */
+    .modern-btn {
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 30px;
+        transition: background-color 0.3s ease;
+    }
+    .modern-btn:hover {
+        background-color: #343a40;
+        color: #fff;
+    }
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .main-title {
+            font-size: 2.5rem;
+        }
+        .sub-title {
+            font-size: 1.75rem;
+        }
+        .section-header {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+
+{% endblock %}

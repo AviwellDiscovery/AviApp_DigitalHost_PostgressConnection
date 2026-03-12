@@ -1,0 +1,51 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<head>
+        <link rel="stylesheet" type="text/css" href="{% static 'Avapp/css/style.css' %}">
+    <meta charset="UTF-8">
+    <title>Pen & feature</title>
+</head>
+<body>
+    <center>
+        <H1> Fetching records Pen </H1>
+        <a href="http://127.0.0.1:8000/avapp/">Back to the main page app</a> <br>
+        <a href="http://127.0.0.1:8000/avapp/pen">Back to Pen page</a>
+        <button onclick="goBack()">Go Back</button>
+
+
+        <table border="1">
+            <tr>
+                <th> IdPen </th>
+                <th> Trt </th>
+                <th> DonorHen </th>
+                <th> DietStarter </th>
+                <th> FeatureName </th>
+                <th> value </th>
+            </tr>
+            {% for result in penhasfeature %}
+            <tr>
+                <td>{{result.pen_idpen.idpen}}</td>
+                <td>{{result.pen_idpen.trt}}</td>
+                <td>{{result.pen_idpen.donorhen}}</td>
+                <td>{{result.pen_idpen.dietstarter}}</td>
+                <td>{{result.feature_idfeature.featurename}}</td>
+                <td>{{result.value}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    </center>
+
+<script>
+function goBack() {
+  // Save the current URL in localStorage
+  localStorage.setItem('previousUrl', window.location.href);
+  // Go back to the previous page
+  window.history.back();
+}
+</script>
+</body>
+</html>

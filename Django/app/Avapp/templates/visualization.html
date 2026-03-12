@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Visualization</h1>
+{% for field_name in selected_data %}
+    <p>{{ field_name }}</p>
+{% endfor %}
+  <img src="data:image/png;base64,{{ plot }}" alt="visualization">
+  <br>
+  <a href="{% url 'my_form' %}">Back to form</a>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+    <title>Analysis</title>
+
+    <center>
+        <H1> Fetching records Study </H1>
+        <a href="http://127.0.0.1:8000/avapp/">Back to the app</a>
+        <table border="1">
+            <tr>
+                <th> Study Id </th>
+                <th> Study Name</th>
+                <th> Study Date </th>
+            </tr>
+            {% for result in dataAnalysis %}
+            <tr>
+                <td>{{result.idstudy}}</td>
+                <td>{{result.studyname}}</td>
+                <td>{{result.studydate}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </center>
+</body>
+</html>
+{% endblock %}

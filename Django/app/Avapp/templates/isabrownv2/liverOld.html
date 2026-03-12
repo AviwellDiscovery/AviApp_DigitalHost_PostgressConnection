@@ -1,0 +1,881 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block block-body-content %}
+
+<style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.spinner {
+  display: none; /* Hidden by default */
+  margin: 0 auto;
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 0.9s linear infinite;
+}
+.sunburst-container {
+  width: 100%;
+  max-width: 700px;
+  height: 700px;
+  margin: 0 auto;
+}
+.table { width: 100%; margin-bottom:1rem; color:#212529; }
+.list-group-item { border:none; padding-left:0; }
+
+/* Optional: Style for the Ensembl links */
+a.ensembl-link {
+  color: #007bff;
+  text-decoration: none;
+}
+a.ensembl-link:hover {
+  text-decoration: underline;
+}
+</style>
+
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<div class="container mt-5">
+  <h2 class="text-primary text-center">Sunburst Mofa CC</h2>
+<!--  &lt;!&ndash; Threshold slider &ndash;&gt;-->
+<!--  <hr>-->
+<!--    &lt;!&ndash; Sunburst Mofa CC &ndash;&gt;-->
+<!--    <div>-->
+<!--        <img src="{% static 'Avapp/images/sunburst_mofa_cc_liver_genes.png' %}" class="card-img-top grey-img" alt="Sunburst Mofa CC">-->
+<!--        <p class="text-warning">Text to add</p>-->
+<!--    </div>-->
+<!--<p>...</p>-->
+
+    <hr>
+  <div class="text-center mb-3">
+    <label>Threshold:</label>
+    <input type="range" id="threshold_slider" min="0.2" max="0.4" step="0.1" value="0.4" style="width:200px;">
+    <span id="threshold_value">0.4</span>
+  </div>
+
+  <!-- Sunburst 0.4 -->
+  <div id="sunburst_container_0_4" class="sunburst-container">
+    {{ sunburst_html_0_4|safe }}
+  </div>
+  <!-- Sunburst 0.3 -->
+  <div id="sunburst_container_0_3" class="sunburst-container" style="display:none;">
+    {{ sunburst_html_0_3|safe }}
+  </div>
+  <!-- Sunburst 0.2 -->
+  <div id="sunburst_container_0_2" class="sunburst-container" style="display:none;">
+    {{ sunburst_html_0_2|safe }}
+  </div>
+
+
+
+  <hr>
+  <h1 class="text-center">{{ data_type }} Data Analysis for {{ host_type }}</h1>
+  <p class="text-center">{{ description }}</p>
+  <hr>
+
+  <!-- Step 1: Tissue Selection -->
+  <div class="card mb-4">
+    <div class="card-header bg-info text-white">Step 1: Select Tissue</div>
+    <div class="card-body">
+      <p>Select which tissue you want & load its variables.</p>
+      <select id="tissue_select" class="form-control">
+        <option value="">-- Choose a Tissue --</option>
+        {% for t in tissue_types %}
+          <option value="{{ t }}">{{ t|capfirst }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" id="load_tissue_btn" class="btn btn-success mt-2">Load Tissue Variables</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Single-Var Filtering -->
+  <div class="card mb-4" id="filter_card" style="display:none;">
+    <div class="card-header bg-primary text-white">Step 2: Single-Var Filtering</div>
+    <div class="card-body">
+      <p>Pick one variable, set correlation & accuracy. We'll show top 100 only.
+         The download button will only include those 100 lines.</p>
+
+      <label>Select Variable:</label>
+      <input type="text" class="form-control" id="variable_input" list="variable_list" placeholder="Type a variable name">
+      <datalist id="variable_list"></datalist>
+
+      <label class="mt-2">Minimum Accuracy:
+        <span id="accuracy_value">0</span>
+      </label>
+      <input type="range" id="accuracy" min="0" max="1" step="0.01" value="0" class="form-range">
+
+      <label class="mt-2">Correlation Threshold:</label>
+      <div class="d-flex align-items-center">
+        <input type="number" id="correlation_min" value="-1" step="0.01" min="-1" max="1" class="form-control" style="max-width:100px;">
+        <input type="number" id="correlation_max" value="1" step="0.01" min="-1" max="1" class="form-control ms-2" style="max-width:100px;">
+        <button type="button" id="search_btn" class="btn btn-primary ms-2">Search</button>
+      </div>
+      <small>(Min:-1, Max:1)</small>
+    </div>
+  </div>
+
+  <!-- Single Var Results -->
+  <div class="d-flex align-items-center mb-2">
+    <p id="match_count" class="text-info mb-0 me-3">Matching results: 0</p>
+    <button type="button" id="download_tsv_btn" class="btn btn-outline-dark" style="display:none;">
+      Download Single-Var CSV (Top 100)
+    </button>
+  </div>
+  <div id="loading_spinner" style="display:none; text-align:center;">
+    <div class="spinner"></div>
+  </div>
+  <div id="filtered_results">
+    <p class="text-warning">No results yet. Adjust filters above.</p>
+  </div>
+
+  <!-- Step 3: Multi-Var Filtering -->
+  <div class="card mb-4" id="multi_filter_card" style="display:none;">
+    <div class="card-header bg-success text-white">Step 3: Multi-Variable Filtering</div>
+    <div class="card-body">
+      <p>Select multiple variables, set correlation & accuracy. We'll show top 100 only.
+         The download button will only include those 100 lines.</p>
+
+      <label>Search and Add Variables:</label>
+      <input type="text" class="form-control" id="multi_variable_search" list="multi_variable_search_list" placeholder="Search for variables">
+      <datalist id="multi_variable_search_list"></datalist>
+      <button type="button" id="add_variable_btn" class="btn btn-secondary mt-2">Add Variable</button>
+
+      <p>Selected Variables:</p>
+      <ul id="selected_variables_list" class="list-group"></ul>
+
+      <label class="mt-2">Minimum Accuracy:
+        <span id="multi_accuracy_value">0</span>
+      </label>
+      <input type="range" id="multi_accuracy" min="0" max="1" step="0.01" value="0" class="form-range">
+
+      <label class="mt-2">Correlation Threshold:</label>
+      <div class="d-flex align-items-center">
+        <input type="number" id="multi_correlation_min" value="-1" step="0.01" min="-1" max="1" class="form-control" style="max-width:100px;">
+        <input type="number" id="multi_correlation_max" value="1" step="0.01" min="-1" max="1" class="form-control ms-2" style="max-width:100px;">
+        <button type="button" id="multi_search_btn" class="btn btn-success ms-2">Search Multi</button>
+      </div>
+      <small>(Min:-1, Max:1)</small>
+    </div>
+  </div>
+
+  <!-- Multi Var Results -->
+  <div class="d-flex align-items-center mb-2">
+    <p id="multi_match_count" class="text-info mb-0 me-3">Matching results: 0</p>
+    <button type="button" id="multi_download_tsv_btn" class="btn btn-outline-dark" style="display:none;">
+      Download Multi-Var CSV (Top 100)
+    </button>
+  </div>
+  <div id="multi_loading_spinner" style="display:none; text-align:center;">
+    <div class="spinner"></div>
+  </div>
+  <div id="multi_filtered_results">
+    <p class="text-warning">No results yet. Adjust multi-variable filters above.</p>
+  </div>
+
+  <!-- Ensembl Info -->
+  <div class="card mb-4">
+    <div class="card-header bg-secondary text-white">Ensembl Identifier Information</div>
+    <div class="card-body">
+      <p>Enter an Ensembl ID (e.g. <code>ENSGALG00010017280</code>). We'll call
+         <code>https://rest.ensembl.org/lookup/id/[ID]?expand=1</code> (in JSON),
+         then display fields like description, start, end, etc.</p>
+
+      <input type="text" class="form-control" id="ensembl_input" placeholder="ENSGALG00010017280">
+      <button type="button" id="check_info_btn" class="btn btn-warning mt-2">Fetch Gene Info</button>
+      <button type="button" id="direct_link_btn" class="btn btn-link">Go to Ensembl</button>
+      <hr>
+      <div id="ensembl_loading_spinner" style="display:none; text-align:center;">
+        <div class="spinner"></div>
+      </div>
+      <div id="ensembl_results">
+        <p class="text-muted">No info yet.</p>
+      </div>
+    </div>
+  </div>
+<div class="card mb-4">
+  <div class="card-header bg-secondary text-white">Recherche d'Ensembl par nom de gène</div>
+  <div class="card-body">
+    <p>Entrez un nom de gène pour trouver son identifiant Ensembl.</p>
+    <div class="input-group mb-3">
+      <input type="text" class="form-control" id="gene_name_input" placeholder="Entrez un nom de gène">
+      <button type="button" id="gene_search_btn" class="btn btn-primary">Chercher l'Ensembl ID</button>
+    </div>
+    <div id="gene_search_result" class="mt-3"></div>
+  </div>
+</div>
+
+<div class="text-center mt-4">
+        <a href="{% url 'isabrown_detailv2' %}" class="btn btn-secondary">Back to IsaBrown Tissue Selection</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const geneNameInput = document.getElementById('gene_name_input');
+  const geneSearchBtn = document.getElementById('gene_search_btn');
+  const geneSearchResult = document.getElementById('gene_search_result');
+
+  geneSearchBtn.addEventListener('click', () => {
+    const geneName = geneNameInput.value.trim();
+    if (!geneName) {
+      alert("Veuillez entrer un nom de gène.");
+      return;
+    }
+
+    geneSearchResult.innerHTML = '<p>Recherche en cours...</p>';
+
+    fetch(`{% url 'ensembl_id_lookup' %}?gene_name=${encodeURIComponent(geneName)}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.error) {
+        geneSearchResult.innerHTML = `<p class="text-danger">${data.error}</p>`;
+      } else if(data.ensembl_id) {
+        geneSearchResult.innerHTML = `<p class="text-success">Ensembl ID pour ${geneName} : <strong>${data.ensembl_id}</strong></p>`;
+      } else {
+        geneSearchResult.innerHTML = `<p class="text-warning">Aucun résultat trouvé.</p>`;
+      }
+    })
+    .catch(error => {
+      geneSearchResult.innerHTML = `<p class="text-danger">Erreur lors de la recherche : ${error.message}</p>`;
+    });
+  });
+
+  // ========== LOADING SPINNER FUNCTIONS ========== //
+  const loadingSpinner = document.getElementById('loading_spinner');
+  const multiLoadingSpinner = document.getElementById('multi_loading_spinner');
+
+  function showSpinner() {
+    loadingSpinner.style.display = 'block';
+  }
+
+  function hideSpinner() {
+    loadingSpinner.style.display = 'none';
+  }
+
+  function showMultiSpinner() {
+    multiLoadingSpinner.style.display = 'block';
+  }
+
+  function hideMultiSpinner() {
+    multiLoadingSpinner.style.display = 'none';
+  }
+
+  // ========== SUNBURST THRESHOLD TOGGLE ========== //
+  const thresholdSlider = document.getElementById('threshold_slider');
+  const thresholdValue = document.getElementById('threshold_value');
+  const sbCont04 = document.getElementById('sunburst_container_0_4');
+  const sbCont03 = document.getElementById('sunburst_container_0_3');
+  const sbCont02 = document.getElementById('sunburst_container_0_2');
+
+  thresholdSlider.addEventListener('input', ()=>{
+    thresholdValue.textContent = thresholdSlider.value;
+    if(thresholdSlider.value === "0.4"){
+      sbCont04.style.display='block';
+      sbCont03.style.display='none';
+      sbCont02.style.display='none';
+    }
+    else if(thresholdSlider.value === "0.3"){
+      sbCont04.style.display='none';
+      sbCont03.style.display='block';
+      sbCont02.style.display='none';
+    }
+    else {
+      sbCont04.style.display='none';
+      sbCont03.style.display='none';
+      sbCont02.style.display='block';
+    }
+  });
+
+  // ========== PLOTLY CLICK => Ensembl ========== //
+// ========== PLOTLY CLICK => open NCBI ========== //
+const sbDiv04 = document.getElementById("sunburst_04");
+const sbDiv03 = document.getElementById("sunburst_03");
+const sbDiv02 = document.getElementById("sunburst_02");
+
+
+// For the 0.4 sunburst
+if (sbDiv04 && sbDiv04.on) {
+  sbDiv04.on("plotly_click", function(data) {
+    if (!data.points || !data.points.length) return;
+    const pt = data.points[0];
+    const label = pt.label;
+
+    // If the label starts with "Cluster", do nothing
+    if (label && label.startsWith("Cluster")) {
+      return;
+    }
+
+    // Otherwise, open NCBI
+    const url = "https://www.ensembl.org/Multi/Search/Results?q=" + encodeURIComponent(label);
+    window.open(url, "_blank");
+  });
+}
+
+// For the 0.3 sunburst
+if (sbDiv03 && sbDiv03.on) {
+  sbDiv03.on("plotly_click", function(data) {
+    if (!data.points || !data.points.length) return;
+    const pt = data.points[0];
+    const label = pt.label;
+
+    // Skip arcs if label starts with "Cluster"
+    if (label && label.startsWith("Cluster")) {
+      return;
+    }
+
+    const url = "https://www.ensembl.org/Multi/Search/Results?q=" + encodeURIComponent(label);
+    window.open(url, "_blank");
+  });
+}
+
+// For the 0.2 sunburst
+if (sbDiv02 && sbDiv02.on) {
+  sbDiv02.on("plotly_click", function(data) {
+    if (!data.points || !data.points.length) return;
+    const pt = data.points[0];
+    const label = pt.label;
+
+    // Skip arcs if label starts with "Cluster"
+    if (label && label.startsWith("Cluster")) {
+      return;
+    }
+
+    const url = "https://www.ensembl.org/Multi/Search/Results?q=" + encodeURIComponent(label);
+    window.open(url, "_blank");
+  });
+}
+
+
+  // ========== TISSUE LOADING ========== //
+  const tissueSelect = document.getElementById('tissue_select');
+  const loadTissueBtn = document.getElementById('load_tissue_btn');
+  const filterCard = document.getElementById('filter_card');
+  const multiFilterCard = document.getElementById('multi_filter_card');
+  let currentTissue = null;
+
+  loadTissueBtn.addEventListener('click', ()=>{
+    const tVal = tissueSelect.value;
+    if(!tVal){
+      alert("Choose a tissue first.");
+      return;
+    }
+    showSpinner();  // Show spinner
+    fetch(`?load_tissue=1&tissue=${encodeURIComponent(tVal)}`, { headers:{ 'X-Requested-With':'XMLHttpRequest'} })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data=>{
+      hideSpinner(); // Hide spinner
+      if(data.error){ alert(data.error); return; }
+
+      // Single var list
+      const variableList = document.getElementById('variable_list');
+      variableList.innerHTML = '';
+      (data.variables||[]).forEach(v=>{
+        let opt = document.createElement('option');
+        opt.value = v;
+        variableList.appendChild(opt);
+      });
+
+      // Multi var list
+      const multiList = document.getElementById('multi_variable_search_list');
+      multiList.innerHTML='';
+      (data.variables||[]).forEach(v=>{
+        let o2 = document.createElement('option');
+        o2.value = v;
+        multiList.appendChild(o2);
+      });
+
+      filterCard.style.display='block';
+      multiFilterCard.style.display='block';
+      currentTissue = tVal;
+
+      // Reset
+      matchCount.textContent = 'Matching results: 0';
+      filteredResultsDiv.innerHTML = '<p class="text-warning">No results yet. Adjust filters above.</p>';
+      downloadTsvBtn.style.display='none';
+
+      multiMatchCount.textContent = 'Matching results: 0';
+      multiFilteredResultsDiv.innerHTML = '<p class="text-warning">No results yet. Adjust multi-variable filters above.</p>';
+      multiDownloadTsvBtn.style.display='none';
+
+      selectedVariables = [];
+      updateSelectedVariablesDisplay();
+    })
+    .catch(err=>{
+      hideSpinner();
+      alert("Error: " + err.message);
+    });
+  });
+
+  // ========== SINGLE-VAR ========== //
+  const accuracySlider = document.getElementById('accuracy');
+  const accuracyValue = document.getElementById('accuracy_value');
+  const variableInput = document.getElementById('variable_input');
+  const correlationMinInput = document.getElementById('correlation_min');
+  const correlationMaxInput = document.getElementById('correlation_max');
+  const searchBtn = document.getElementById('search_btn');
+  const matchCount = document.getElementById('match_count');
+  const filteredResultsDiv = document.getElementById('filtered_results');
+  const downloadTsvBtn = document.getElementById('download_tsv_btn');
+  let displayedResultsSingleVar = [];
+
+  accuracySlider.addEventListener('input', ()=>{
+    accuracyValue.textContent = accuracySlider.value;
+  });
+
+  variableInput.addEventListener('change', ()=>{
+    const variable = variableInput.value;
+    if(!variable || !currentTissue) return;
+    fetch(`?tissue=${encodeURIComponent(currentTissue)}&variable=${encodeURIComponent(variable)}&fetch_min_max=1`, {
+      headers:{ 'X-Requested-With':'XMLHttpRequest'}
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data=>{
+      if(data.error){
+        console.warn(data.error);
+        return;
+      }
+      correlationMinInput.value = data.min_correlation;
+      correlationMaxInput.value = data.max_correlation;
+    })
+    .catch(err=>console.error(err));
+  });
+
+  searchBtn.addEventListener('click', ()=>{
+    const variable = variableInput.value.trim();
+    if(!variable){
+      alert("Please choose a variable.");
+      return;
+    }
+    const accVal = parseFloat(accuracySlider.value);
+    const cMinVal = parseFloat(correlationMinInput.value);
+    const cMaxVal = parseFloat(correlationMaxInput.value);
+
+    showSpinner();  // Show spinner
+    fetch(`?tissue=${encodeURIComponent(currentTissue)}&variable=${encodeURIComponent(variable)}&accuracy=${accVal}&correlation_min=${cMinVal}&correlation_max=${cMaxVal}`, {
+      headers:{ 'X-Requested-With':'XMLHttpRequest'}
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data=>{
+      hideSpinner(); // Hide spinner
+      if(data.error){
+        matchCount.textContent='Matching results: 0';
+        filteredResultsDiv.innerHTML = `<p class="text-danger">${data.error}</p>`;
+        downloadTsvBtn.style.display='none';
+        displayedResultsSingleVar = [];
+        return;
+      }
+      let results = data.results||[];
+      let totalCount = data.total_count||0;
+      matchCount.textContent = `Matching results: ${totalCount}`;
+      if(!results.length){
+        filteredResultsDiv.innerHTML='<p class="text-warning">No results found.</p>';
+        downloadTsvBtn.style.display='none';
+        displayedResultsSingleVar = [];
+        return;
+      }
+      displayedResultsSingleVar = results;
+      downloadTsvBtn.style.display='inline-block';
+
+      let html = `
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Variable 1 (Selected Tissue)</th>
+              <th>Variable 2 ({{ data_type }})</th>
+              <th>Accuracy</th>
+              <th>Correlation</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      results.forEach(row=>{
+        let var1Cell = row.var1;
+        let var2Cell = row.var2;
+
+        // 1) If tissue == 'otu' => s__ => link to NCBI
+        if(currentTissue === 'otu'){
+          if(var1Cell.startsWith('s__')){
+            let sp1 = var1Cell.replace(/^s__/, '').replace(/_/g, ' ');
+            var1Cell = `<a href="https://www.ncbi.nlm.nih.gov/search/all/?term=${encodeURIComponent(sp1)}" target="_blank">${sp1}</a>`;
+          }
+          if(var2Cell.startsWith('s__')){
+            let sp2 = var2Cell.replace(/^s__/, '').replace(/_/g, ' ');
+            var2Cell = `<a href="https://www.ncbi.nlm.nih.gov/search/all/?term=${encodeURIComponent(sp2)}" target="_blank">${sp2}</a>`;
+          }
+        }
+
+        // 2) If var has "ENSGALG" => strip suffix and link to Ensembl
+        if(var1Cell.includes('ENSGALG')){
+          const trimmed1 = var1Cell.split('_')[0];
+          var1Cell = `<a href="https://www.ensembl.org/Multi/Search/Results?q=${encodeURIComponent(trimmed1)};site=ensembl" target="_blank" class="ensembl-link">${trimmed1}</a>`;
+        }
+        if(var2Cell.includes('ENSGALG')){
+          const trimmed2 = var2Cell.split('_')[0];
+          var2Cell = `<a href="https://www.ensembl.org/Multi/Search/Results?q=${encodeURIComponent(trimmed2)};site=ensembl" target="_blank" class="ensembl-link">${trimmed2}</a>`;
+        }
+
+        html += `
+          <tr>
+            <td>${var1Cell}</td>
+            <td>${var2Cell}</td>
+            <td>${row.accuracy}</td>
+            <td>${row.correlation}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      filteredResultsDiv.innerHTML = html;
+    })
+    .catch(err=>{
+      hideSpinner();
+      matchCount.textContent='Matching results: 0';
+      filteredResultsDiv.innerHTML = `<p class="text-danger">${err.message}</p>`;
+      downloadTsvBtn.style.display='none';
+      displayedResultsSingleVar = [];
+    });
+  });
+
+  downloadTsvBtn.addEventListener('click', (evt)=>{
+    evt.preventDefault();
+    if(!displayedResultsSingleVar.length){
+      alert("No single-var results to download.");
+      return;
+    }
+    let csvContent = "var1,var2,accuracy,correlation\n";
+    displayedResultsSingleVar.forEach(r=>{
+      let line = `"${r.var1}","${r.var2}",${r.accuracy},${r.correlation}`;
+      csvContent += line + "\n";
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = "single_var_top100.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  });
+
+  // ========== MULTI-VAR ========== //
+  const multiAccuracy = document.getElementById('multi_accuracy');
+  const multiAccuracyValue = document.getElementById('multi_accuracy_value');
+  const multiCorrelationMin = document.getElementById('multi_correlation_min');
+  const multiCorrelationMax = document.getElementById('multi_correlation_max');
+  const multiSearchBtn = document.getElementById('multi_search_btn');
+  const multiMatchCount = document.getElementById('multi_match_count');
+  const multiFilteredResultsDiv = document.getElementById('multi_filtered_results');
+  const multiDownloadTsvBtn = document.getElementById('multi_download_tsv_btn');
+  const multiVariableSearchInput = document.getElementById('multi_variable_search');
+  const multiVariableSearchList = document.getElementById('multi_variable_search_list');
+  const addVariableBtn = document.getElementById('add_variable_btn');
+  const selectedVariablesList = document.getElementById('selected_variables_list');
+
+  let selectedVariables = [];
+  let displayedResultsMultiVar = [];
+
+  multiAccuracy.addEventListener('input', ()=>{
+    multiAccuracyValue.textContent = multiAccuracy.value;
+  });
+
+  addVariableBtn.addEventListener('click', ()=>{
+    const varValue = multiVariableSearchInput.value.trim();
+    if(!varValue){
+      alert("No variable typed.");
+      return;
+    }
+    const validVars = Array.from(multiVariableSearchList.options).map(o=>o.value);
+    if(!validVars.includes(varValue)){
+      alert("Var not in the list.");
+      return;
+    }
+    if(selectedVariables.includes(varValue)){
+      alert("Var already added.");
+      return;
+    }
+    selectedVariables.push(varValue);
+    updateSelectedVariablesDisplay();
+    multiVariableSearchInput.value='';
+  });
+
+  function updateSelectedVariablesDisplay(){
+    selectedVariablesList.innerHTML='';
+    selectedVariables.forEach((variable, idx)=>{
+      const li = document.createElement('li');
+      li.className='list-group-item d-flex justify-content-between align-items-center';
+      li.textContent = variable;
+      const rm = document.createElement('button');
+      rm.textContent='✖';
+      rm.className='btn btn-sm btn-danger';
+      rm.onclick=()=>{
+        selectedVariables.splice(idx,1);
+        updateSelectedVariablesDisplay();
+      };
+      li.appendChild(rm);
+      selectedVariablesList.appendChild(li);
+    });
+  }
+
+  multiSearchBtn.addEventListener('click', ()=>{
+    if(!selectedVariables.length){
+      alert("Please add at least one variable.");
+      return;
+    }
+    const accVal = parseFloat(multiAccuracy.value);
+    const cMinVal = parseFloat(multiCorrelationMin.value);
+    const cMaxVal = parseFloat(multiCorrelationMax.value);
+
+    showMultiSpinner();  // Show spinner
+    let params = new URLSearchParams();
+    params.append('multi_variable','1');
+    params.append('tissue', currentTissue);
+    selectedVariables.forEach(v=>params.append('variables[]', v));
+    params.append('accuracy', accVal);
+    params.append('correlation_min', cMinVal);
+    params.append('correlation_max', cMaxVal);
+
+    fetch(`?${params.toString()}`, { headers:{ 'X-Requested-With':'XMLHttpRequest'} })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data=>{
+      hideMultiSpinner(); // Hide spinner
+      if(data.error){
+        multiMatchCount.textContent='Matching results: 0';
+        multiFilteredResultsDiv.innerHTML = `<p class="text-danger">${data.error}</p>`;
+        multiDownloadTsvBtn.style.display='none';
+        displayedResultsMultiVar = [];
+        return;
+      }
+      const results = data.results||[];
+      const totalCount = data.total_count||0;
+      multiMatchCount.textContent = `Matching results: ${totalCount}`;
+      if(!results.length){
+        multiFilteredResultsDiv.innerHTML = '<p class="text-warning">No results found.</p>';
+        multiDownloadTsvBtn.style.display='none';
+        displayedResultsMultiVar = [];
+        return;
+      }
+      displayedResultsMultiVar = results;
+      multiDownloadTsvBtn.style.display='inline-block';
+
+      let html = `
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Variable 1 (Selected Tissue)</th>
+              <th>Variable 2 ({{ data_type }})</th>
+              <th>Accuracy</th>
+              <th>Correlation</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      results.forEach(row=>{
+        let var1Cell = row.var1;
+        let var2Cell = row.var2;
+
+        // If tissue=otu => link s__ to NCBI
+        if(currentTissue === 'otu'){
+          if(var1Cell.startsWith('s__')){
+            let sp1 = var1Cell.replace(/^s__/, '').replace(/_/g, ' ');
+            var1Cell = `<a href="https://www.ncbi.nlm.nih.gov/search/all/?term=${encodeURIComponent(sp1)}" target="_blank">${sp1}</a>`;
+          }
+          if(var2Cell.startsWith('s__')){
+            let sp2 = var2Cell.replace(/^s__/, '').replace(/_/g, ' ');
+            var2Cell = `<a href="https://www.ncbi.nlm.nih.gov/search/all/?term=${encodeURIComponent(sp2)}" target="_blank">${sp2}</a>`;
+          }
+        }
+        // If cell has "ENSGALG" => strip suffix and link to Ensembl
+        if(var1Cell.includes('ENSGALG')){
+          const trimmed1 = var1Cell.split('_')[0];
+          var1Cell = `<a href="https://www.ensembl.org/Multi/Search/Results?q=${encodeURIComponent(trimmed1)};site=ensembl" target="_blank" class="ensembl-link">${trimmed1}</a>`;
+        }
+        if(var2Cell.includes('ENSGALG')){
+          const trimmed2 = var2Cell.split('_')[0];
+          var2Cell = `<a href="https://www.ensembl.org/Multi/Search/Results?q=${encodeURIComponent(trimmed2)};site=ensembl" target="_blank" class="ensembl-link">${trimmed2}</a>`;
+        }
+
+        html += `
+          <tr>
+            <td>${var1Cell}</td>
+            <td>${var2Cell}</td>
+            <td>${row.accuracy}</td>
+            <td>${row.correlation}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      multiFilteredResultsDiv.innerHTML = html;
+    })
+    .catch(err=>{
+      hideMultiSpinner(); // Hide spinner
+      multiMatchCount.textContent='Matching results: 0';
+      multiFilteredResultsDiv.innerHTML=`<p class="text-danger">${err.message}</p>`;
+      multiDownloadTsvBtn.style.display='none';
+      displayedResultsMultiVar = [];
+    });
+  });
+
+  multiDownloadTsvBtn.addEventListener('click', (e)=>{
+    e.preventDefault();
+    if(!displayedResultsMultiVar.length){
+      alert("No multi-var results to download.");
+      return;
+    }
+    let csvContent = "var1,var2,accuracy,correlation\n";
+    displayedResultsMultiVar.forEach(r=>{
+      let line = `"${r.var1}","${r.var2}",${r.accuracy},${r.correlation}`;
+      csvContent += line + "\n";
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = "multi_var_top100.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  });
+
+  // ========== ENSEMBL GENE INFO ========== //
+  const ensemblInput = document.getElementById('ensembl_input');
+  const checkInfoBtn = document.getElementById('check_info_btn');
+  const directLinkBtn = document.getElementById('direct_link_btn');
+  const ensemblLoadingSpinner = document.getElementById('ensembl_loading_spinner');
+  const ensemblResultsDiv = document.getElementById('ensembl_results');
+
+  checkInfoBtn.addEventListener('click', () => {
+    const ensemblId = ensemblInput.value.trim();
+    if(!ensemblId){
+      alert("Please enter an Ensembl identifier.");
+      return;
+    }
+    checkInfoBtn.disabled = true;
+    ensemblLoadingSpinner.style.display = 'block';
+    ensemblResultsDiv.innerHTML = '';
+
+    const ensemblApiUrl = `https://rest.ensembl.org/lookup/id/${encodeURIComponent(ensemblId)}?expand=1`;
+
+    fetch(ensemblApiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Ensembl API error: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      ensemblLoadingSpinner.style.display = 'none';
+      checkInfoBtn.disabled = false;
+
+      if (!data || Object.keys(data).length === 0) {
+        ensemblResultsDiv.innerHTML = `<p class="text-warning">No gene information found for ID: ${ensemblId}.</p>`;
+        return;
+      }
+
+      const geneInfo = {
+        "Ensembl_ID": data.id || "N/A",
+        "Gene_Name": data.display_name || "N/A",
+        "Description": data.description || "N/A",
+        "Biotype": data.biotype || "N/A",
+        "Chromosome": data.seq_region_name || "N/A",
+        "Start": data.start || "N/A",
+        "End": data.end || "N/A",
+        "Strand": data.strand === 1 ? "Forward" : data.strand === -1 ? "Reverse" : "N/A",
+        "External_URL": data.external || []
+      };
+
+      let infoHtml = `
+        <h5>Gene Information:</h5>
+        <ul class="list-group">
+          <li class="list-group-item"><strong>Ensembl ID:</strong> ${geneInfo.Ensembl_ID}</li>
+          <li class="list-group-item"><strong>Gene Name:</strong> ${geneInfo.Gene_Name}</li>
+          <li class="list-group-item"><strong>Description:</strong> ${geneInfo.Description}</li>
+          <li class="list-group-item"><strong>Biotype:</strong> ${geneInfo.Biotype}</li>
+          <li class="list-group-item"><strong>Chromosome:</strong> ${geneInfo.Chromosome}</li>
+          <li class="list-group-item"><strong>Start:</strong> ${geneInfo.Start}</li>
+          <li class="list-group-item"><strong>End:</strong> ${geneInfo.End}</li>
+          <li class="list-group-item"><strong>Strand:</strong> ${geneInfo.Strand}</li>
+        </ul>
+      `;
+      if (geneInfo.External_URL.length > 0) {
+        infoHtml += `<h6 class="mt-3">External Links:</h6><ul>`;
+        geneInfo.External_URL.forEach(url => {
+          infoHtml += `<li><a href="${url}" target="_blank">${url}</a></li>`;
+        });
+        infoHtml += `</ul>`;
+      }
+      ensemblResultsDiv.innerHTML = infoHtml;
+    })
+    .catch(err=>{
+      ensemblLoadingSpinner.style.display = 'none';
+      checkInfoBtn.disabled = false;
+      ensemblResultsDiv.innerHTML = `
+        <p class="text-danger">Error: ${err.message}</p>
+        <p>You can visit the <a href="https://www.ensembl.org" target="_blank">Ensembl website</a> to look up the gene manually.</p>
+      `;
+    });
+  });
+
+  directLinkBtn.addEventListener('click', ()=>{
+    const ensemblId = ensemblInput.value.trim();
+    if(!ensemblId){
+      alert("Please enter an Ensembl identifier.");
+      return;
+    }
+    // Strip any suffix after underscore
+    const trimmedId = ensemblId.split('_')[0];
+    const ensemblUrl = `https://www.ensembl.org/Multi/Search/Results?q=${encodeURIComponent(trimmedId)};site=ensembl`;
+    window.open(ensemblUrl, "_blank");
+  });
+
+  // Helper funcs
+  function showSpinner(){
+    loadingSpinner.style.display='block';
+  }
+  function hideSpinner(){
+    loadingSpinner.style.display='none';
+  }
+  function showMultiSpinner(){
+    multiLoadingSpinner.style.display='block';
+  }
+  function hideMultiSpinner(){
+    multiLoadingSpinner.style.display='none';
+  }
+
+});
+</script>
+
+{% endblock %}

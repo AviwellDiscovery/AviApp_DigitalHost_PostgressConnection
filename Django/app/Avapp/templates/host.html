@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+<!--<head>-->
+<!--<meta charset="UTF-8">-->
+<!--&lt;!&ndash; template.html &ndash;&gt;-->
+<!--<meta name="viewport" content="width=device-width, initial-scale=1">-->
+<!--<script src="{% static 'js/custom.js' %}"></script>-->
+<!--<link rel="stylesheet" type="text/css" href="{% static 'Avapp/css/style.css' %}">-->
+
+<!--    <meta charset="UTF-8">-->
+<!--    	&lt;!&ndash; Bootstrap Styleshett &ndash;&gt;-->
+<!--		&lt;!&ndash; Bootstrap CSS Library &ndash;&gt;-->
+<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-uWxY/CJNBR+1zjPWmfnSnVxwRheevXITnMqoEIeG1LJrdI0GlVs/9cVSyPYXdcSF" crossorigin="anonymous">-->
+<!--	&lt;!&ndash; Local Stylesheet &ndash;&gt;-->
+<!--	<link rel="stylesheet" type="text/css" href="../css/style-index.css" media="screen">-->
+<!--	<link rel="stylesheet" type="text/css" href="../css/style-index-media-query.css" media="screen">-->
+
+
+    <center>
+
+  <!--  <iframe src="http://localhost:8501" style="border: 2px solid #ddd; border-radius: 8px; width: 100%; height: 100%;"></iframe> -->
+        <H1> Fetching records Host </H1>
+        <a href="http://127.0.0.1:8000/avapp/">Back to the main page app</a>
+        <form method="GET" action="{% url 'host_filter' %}">
+   <div id="sex_filter-fields" >
+            <label for="sex_filter">Sex:</label>
+  <select id="sex_filter" name="sex">
+    <option value="">-- Select a sex --</option>
+    <option value="M">Male</option>
+    <option value="F">Female</option>
+  </select>
+   </div>
+  <label for="study_filter">Study:</label>
+  <select id="study_filter" name="study">
+    <option value="">-- Select a study --</option>
+    <option value="1">PROD1</option>
+    <option value="2">PROD2</option>
+    <option value="3">DISCO</option>
+    <option value="4">POC1</option>
+    <option value="5">POC2</option>
+
+  </select>
+      <div id="weight-fields" style="display: none;">
+          <fieldset  class="birdweight-input" >
+
+        <legend >Weight</legend>
+     <label for="birdweight_d0">BirdWeight_D0:</label>
+     <input type="number" id="birdweight_d0" name="birdweight_d0" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d0 }}">
+     <label for="birdweight_d9">BirdWeight_D9:</label>
+    <input type="number" id="birdweight_d9" name="birdweight_d9" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d9 }}">
+    <label for="birdweight_d21">birdweight_d21:</label>
+    <input type="number" id="birdweight_d21" name="birdweight_d21" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d21 }}">
+    <label for="birdweight_d35">birdweight_d35:</label>
+    <input type="number" id="birdweight_d35" name="birdweight_d35" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d35 }}">
+
+      </fieldset>
+            </div>
+
+            <div id="weight-fields4" style="display: none;">
+          <fieldset  class="birdweight-input4" >
+
+        <legend>Weight</legend>
+    <label for="birdweight_d0">AvgBirdWeight_D0:</label>
+    <input type="number" id="birdweight_d0_4" name="birdweight_d0" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d0 }}" lang="en">
+    <label for="birdweight_d7">AvgBirdWeight_D7:</label>
+    <input type="number" id="birdweight_d7" name="birdweight_d7" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d7 }}" lang="en">
+    <label for="birdweight_d14">AvgBirdWeight_D14:</label>
+    <input type="number" id="birdweight_d14" name="birdweight_d14" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d14 }}" lang="en">
+    <label for="birdweight_d21">AvgBirdWeight_D21:</label>
+    <input type="number" id="birdweight_d21_4" name="birdweight_d21" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d21 }}" lang="en">
+    <label for="birdweight_d28_4">AvgBirdWeight_D28:</label>
+    <input type="number" id="birdweight_d28_4" name="birdweight_d28_4" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d28_4 }}" lang="en">
+    <label for="birdweight_d35">AvgBirdWeight_D35:</label>
+    <input type="number" id="birdweight_d35_4" name="birdweight_d35" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d35 }}" lang="en">
+    <label for="birdweight_d36">AvgBirdWeight_D36:</label>
+    <input type="number" id="birdweight_d36" name="birdweight_d36" min="0" max="3" step="0.001" value="{{ request.GET.birdweight_d36 }}" lang="en">
+
+      </fieldset>
+            </div>
+  <input type="submit" value="Filter"><br>
+</form>
+
+     {% if dataHost.exists %}
+                <td> {{lenhost}} Results found. </td>
+            {% else %}
+                <td> No result founded.</td>
+            {% endif %}
+
+<form method="GET" action="{% url 'analysis' %}">
+    <input type="checkbox" id="select-all">
+<label for="select-all">Select All</label><br><br>
+
+<table border="1" style="border-collapse: collapse; width: 100%;">
+    <tr>
+        <th><center></center></th>
+        <th><center>IdHost</center></th>
+        <th><center>Tag</center></th>
+        <th><center>Sex</center></th>
+        <th><center>GrowthRoom</center></th>
+        <th><center>Study_idStudy</center></th>
+        <th><center>Weight</center></th>
+    </tr>
+    {% for result in dataHost %}
+    <tr>
+        <td><input type="checkbox" name="selected_hosts" value="{{ result.idhost }}"></td>
+        <td><center><a href="http://127.0.0.1:8000/avapp/host/{{ result.idhost }}">{{ result.idhost }}</a></center></td>
+        <td><center>{{ result.tag }}</center></td>
+        <td><center>{{ result.sex }}</center></td>
+        <td><center>{{ result.growthroom }}</center></td>
+        <td><center>{{ result.study_idstudy.idstudy }}</center></td>
+        {% if result.weight == '{}' %}
+        <td><center>No Record</center></td>
+        {% else %}
+        <td><center>{{ result.weight }}</center></td>
+        {% endif %}
+    </tr>
+    {% endfor %}
+</table><br>
+
+
+        <button type="submit" class="btn btn-primary">Show Host Related Infos</button>
+        </form>
+    </center>
+
+
+<script>
+
+    // Get the "select all" checkbox element
+var selectAllCheckbox = document.getElementById('select-all');
+
+// Get all the checkboxes in the form
+var checkboxes = document.querySelectorAll('input[type=checkbox]');
+
+// Add an event listener to the "select all" checkbox
+selectAllCheckbox.addEventListener('change', function() {
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+});
+
+/// for option 3 instudy to show only the weight
+var studyField = document.getElementById('study_filter');
+var weightFields = document.getElementById('weight-fields');
+var sexFilterFields = document.getElementById('sex_filter-fields');
+
+studyField.addEventListener('change', function() {
+  if (studyField.value === '3') {
+    weightFields.style.display = 'block';
+    sexFilterFields.style.display = 'none';
+
+  } else {
+    weightFields.style.display = 'none';
+  }
+});
+
+ /// for option 4 in study to show only the weight POC1
+var weightFields4 = document.getElementById('weight-fields4');
+
+studyField.addEventListener('change', function() {
+  if (studyField.value === '4') {
+    weightFields4.style.display = 'block';
+    sexFilterFields.style.display = 'none';
+
+  } else {
+    weightFields4.style.display = 'none';
+  }
+});
+
+    // if study 1 or 2
+studyField.addEventListener('change', function() {
+  if (studyField.value === '1' || studyField.value === '2' ) {
+    sexFilterFields.style.display = 'block';
+  }
+});
+</script>
+
+{% endblock %}

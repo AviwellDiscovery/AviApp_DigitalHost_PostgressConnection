@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+        <title>Features</title>
+    	<!-- Bootstrap Styleshett -->
+		<!-- Bootstrap CSS Library -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-uWxY/CJNBR+1zjPWmfnSnVxwRheevXITnMqoEIeG1LJrdI0GlVs/9cVSyPYXdcSF" crossorigin="anonymous">
+	<!-- Local Stylesheet -->
+	<link rel="stylesheet" type="text/css" href="../css/style-index.css" media="screen">
+	<link rel="stylesheet" type="text/css" href="../css/style-index-media-query.css" media="screen">
+        <title>Pen</title>
+    <center>
+        <H1> Fetching records Pen using django </H1>
+        <a href="http://127.0.0.1:8000/avapp/">Back to the main page app</a>
+        <table border="1">
+            <tr>
+                <th> IdPen </th>
+                <th> Trt </th>
+                <th> DonorHen </th>
+                <th> DietStarter </th>
+            </tr>
+            {% for result in dataPen %}
+            <tr>
+                <td><a href="http://127.0.0.1:8000/avapp/pen/{{result.idpen}}" >{{result.idpen}}</a></td>
+                <td>{{result.trt}}</td>
+                <td>{{result.donorhen}}</td>
+                <td>{{result.dietstarter}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+
+    </center>
+  <h1>Pen Details</h1>
+  <h1>Fetching DataFrame</h1>
+  <div>{{ table_html|safe }}</div>
+
+<script>
+function goBack() {
+  // Save the current URL in localStorage
+  localStorage.setItem('previousUrl', window.location.href);
+  // Go back to the previous page
+  window.history.back();
+}
+</script>
+</body>
+</html>
+
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+        <title>Features</title>
+    	<!-- Bootstrap Styleshett -->
+		<!-- Bootstrap CSS Library -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-uWxY/CJNBR+1zjPWmfnSnVxwRheevXITnMqoEIeG1LJrdI0GlVs/9cVSyPYXdcSF" crossorigin="anonymous">
+	<!-- Local Stylesheet -->
+	<link rel="stylesheet" type="text/css" href="../css/style-index.css" media="screen">
+	<link rel="stylesheet" type="text/css" href="../css/style-index-media-query.css" media="screen">
+
+    <center>
+        <H1> Fetching records Features using django </H1>
+        <a href="http://127.0.0.1:8000/avapp/">Back to the app</a>
+
+        <table border="1">
+            <tr>
+                <th> Feature Id</th>
+                <th> Feature Name</th>
+            </tr>
+            {% for result in dataFeature %}
+            <tr>
+                <td>{{result.idfeature}}</td>
+                <td>{{result.featurename}}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </center>
+</body>
+</html>
+{% endblock %}

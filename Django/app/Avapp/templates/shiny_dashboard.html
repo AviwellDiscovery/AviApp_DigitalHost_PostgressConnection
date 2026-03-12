@@ -1,0 +1,27 @@
+{% extends 'baseAvapp.html' %}
+{% block block-body-content %}
+{% load static %}
+<!-- Start of your content -->
+<div class="container">
+    <h1>Your Shiny Dashboard</h1>
+    <iframe src="http://localhost:3838/" frameborder="10"></iframe>
+</div>
+<!-- End of your content -->
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+    }
+    iframe {
+        position: fixed; /* or absolute, depending on your layout */
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none; /* optional, to remove iframe border */
+    }
+</style>
+
+{% endblock %}

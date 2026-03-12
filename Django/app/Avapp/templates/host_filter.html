@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+	<!-- Bootstrap Styleshett -->
+		<!-- Bootstrap CSS Library -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-uWxY/CJNBR+1zjPWmfnSnVxwRheevXITnMqoEIeG1LJrdI0GlVs/9cVSyPYXdcSF" crossorigin="anonymous">
+	<!-- Local Stylesheet -->
+	<link rel="stylesheet" type="text/css" href="../css/style-index.css" media="screen">
+	<link rel="stylesheet" type="text/css" href="../css/style-index-media-query.css" media="screen">
+
+</head>
+<script src="{% static 'js/custom.js' %}"></script>
+<body><a href="{% url 'logout' %}">Logout</a>
+  <h1>Host Filter</h1>
+
+  <form method="GET">
+    {{ form.as_p }}
+    <button type="submit">Filter</button>
+  </form>
+
+  {% if hosts %}
+  <h2>Filtered Hosts</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>IdHost</th>
+        <th>Tag</th>
+        <th>Sex</th>
+
+        <!-- Add more columns for other fields as needed -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for host in hosts %}
+      <tr>
+        <td>{{ host.idhost }}</td>
+        <td>{{ host.tag }}</td>
+        <td>{{ host.sex }}</td>
+        <!-- Add more columns for other fields as needed -->
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</body>
+{% endblock %}

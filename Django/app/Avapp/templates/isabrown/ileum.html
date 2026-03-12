@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block block-body-content %}
+<div class="container mt-5">
+    <h1 class="text-center" style="font-size: 2.5rem; font-weight: bold; color: #4a90e2; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);">
+        {{ data_type }} Data Analysis for {{ host_type }} - Ileum
+    </h1>
+    <p class="text-center">{{ description }}</p>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <hr>
+    <!-- Aggregate Bar Chart -->
+    <h2 class="text-primary">Overview: Top 10 Genes by Total Expression</h2>
+    <p>Summarizes the total expression levels of the top 10 genes.</p>
+    <div>
+        {% if aggregate_bar_chart_html %}
+            {{ aggregate_bar_chart_html|safe }}
+        {% else %}
+            {% if errors.aggregate_bar_chart_error %}
+                <p class="text-danger">{{ errors.aggregate_bar_chart_error }}</p>
+            {% else %}
+                <p class="text-warning">No data available for the aggregate bar chart.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+
+       <!-- Sunburst Mofa CC -->
+<h2 class="text-primary">Sunburst Mofa CC</h2>
+<p>...</p>
+<div style="text-align: center; margin: auto;">
+    <!-- Placeholder for better UX -->
+    <div style="width: 750px; height: 850; margin: auto; position: relative; overflow: hidden;">
+        <img src="{% static 'Avapp/images/sunburst_mofa_cc_ileum_genes.png' %}"
+             class="card-img-top grey-img"
+             alt="Sunburst Mofa CC"
+             style="width: 100%; height: 100%; object-fit: cover; display: block; position: absolute;">
+    </div>
+    <p class="text-warning">Text to add</p>
+</div>
+
+    <hr>
+    <!-- System Options Section -->
+    <h2 class="text-primary">System Options</h2>
+    <label for="selected_option" class="mr-2">Select a Pathway:</label>
+    <select id="selected_option" class="form-control mb-3">
+        <option value="" selected>-- Choose Pathway --</option>
+        <option value="PPAR signaling pathway">PPAR signaling pathway</option>
+        <option value="Influenza A">Influenza A</option>
+        <option value="Salmonella infection">Salmonella infection</option>
+        <option value="Cytoskeleton in muscle cells">Cytoskeleton in muscle cells</option>
+        <option value="Ribosome">Ribosome</option>
+        <option value="Carbon metabolism">Carbon metabolism</option>
+        <option value="Glycolysis / Gluconeogenesis">Glycolysis / Gluconeogenesis</option>
+        <option value="Biosynthesis of amino acids">Biosynthesis of amino acids</option>
+        <option value="Citrate cycle (TCA cycle)">Citrate cycle (TCA cycle)</option>
+        <option value="Focal adhesion">Focal adhesion</option>
+        <option value="Adherens junction">Adherens junction</option>
+        <option value="Regulation of actin cytoskeleton">Regulation of actin cytoskeleton</option>
+        <option value="Protein processing in endoplasmic reticulum">Protein processing in endoplasmic reticulum</option>
+        <option value="Tight junction">Tight junction</option>
+    </select>
+
+    <!-- Immune-Selected Cluster Sunburst -->
+    <h2 class="text-primary" id="immune-sunburst-header" style="display: none;">Immune-Selected Cluster Sunburst</h2>
+    <div id="immune-sunburst-container">
+        <div id="no-data-message" class="text-warning" style="display: none;">
+            No data found for the selected pathway.
+        </div>
+        <div id="immune-sunburst" style="display: none;">
+            <p id="default-sunburst-message" class="text-muted">Select a pathway to display the Sunburst chart.</p>
+        </div>
+    </div>
+
+    <!-- Target Selection -->
+    <div id="target-container" style="display: none;">
+        <hr>
+        <h3 class="text-primary">Target Selection</h3>
+        <label for="selected_target" class="mr-2">Select a Target:</label>
+        <select id="selected_target" class="form-control mb-3">
+            <option value="" selected>-- Choose Target --</option>
+            <option value="Target A">Target A</option>
+            <option value="Target B">Target B</option>
+        </select>
+    </div>
+<!-- Paragraph for Network Visualization Notification -->
+    <p id="network-visualization-info" class="text-info" style="display: none; margin-top: 10px;">
+        You will be able to visualize the network visualization for Target A using the button below.
+    </p>
+</div>
+
+    <!-- Button for Network Visualization -->
+<div id="network-visualization-container" class="text-center" style="margin-top: 20px;">
+    <button id="go-network-visualization-btn" class="btn btn-primary" style="display: none;">
+        Go to Network Visualization
+    </button>
+</div>
+
+    <hr>
+
+    <!-- Visualization Options -->
+    <h2 class="text-primary">Select Visualizations to Display</h2>
+    <form id="visualization-options-form" class="mb-4">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="total-gene-expression" id="total-gene-expression-checkbox">
+            <label class="form-check-label" for="total-gene-expression-checkbox">
+                Total Gene Expression Overview
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="top-genes" id="top-genes-checkbox">
+            <label class="form-check-label" for="top-genes-checkbox">
+                Top Genes by Average Quantification
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="gene-expression-sample" id="gene-expression-sample-checkbox">
+            <label class="form-check-label" for="gene-expression-sample-checkbox">
+                Gene Expression by Sample
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="heatmap" id="heatmap-checkbox">
+            <label class="form-check-label" for="heatmap-checkbox">
+                Heatmap of Gene Expression
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="violin-plot" id="violin-plot-checkbox">
+            <label class="form-check-label" for="violin-plot-checkbox">
+                Violin Plot of Gene Expression
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="scatter-plot" id="scatter-plot-checkbox">
+            <label class="form-check-label" for="scatter-plot-checkbox">
+                Scatter Plot of Gene Expression
+            </label>
+        </div>
+    </form>
+
+
+    <div id="visualization-sections">
+        <!-- Total Gene Expression Overview -->
+        <div id="total-gene-expression-section" class="visualization-section" style="display: none;">
+            <hr>
+            <h2 class="text-primary">Total Gene Expression Overview</h2>
+            <p>Explore the overall gene expression across all samples.</p>
+            <div>
+                {% if total_sunburst_chart_html %}
+                    {{ total_sunburst_chart_html|safe }}
+                {% else %}
+                    {% if errors.total_sunburst_error %}
+                        <p class="text-danger">{{ errors.total_sunburst_error }}</p>
+                    {% else %}
+                        <p class="text-warning">No data available for the total sunburst chart.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Bar Chart Section -->
+        <div id="top-genes-section" class="visualization-section" style="display: none;">
+            <hr>
+            <h2 class="text-primary">Top Genes by Average Quantification</h2>
+            <p>Select the number of top genes to display:</p>
+            <form method="GET" class="form-inline mb-4">
+                <label for="top_n" class="mr-2">Top N Genes:</label>
+                <select name="top_n" id="top_n" class="form-control mx-2">
+                    {% for n in top_n_options %}
+                        <option value="{{ n }}" {% if n == top_n %}selected{% endif %}>{{ n }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- Preserve sample_x and sample_y in GET parameters -->
+                {% if sample_x %}
+                    <input type="hidden" name="sample_x" value="{{ sample_x }}">
+                {% endif %}
+                {% if sample_y %}
+                    <input type="hidden" name="sample_y" value="{{ sample_y }}">
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+
+            <div>
+                {% if bar_chart %}
+                    {{ bar_chart|safe }}
+                {% else %}
+                    {% if errors.bar_chart_error %}
+                        <p class="text-danger">{{ errors.bar_chart_error }}</p>
+                    {% else %}
+                        <p class="text-warning">No data available for bar chart visualization.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sunburst Chart: Gene Expression by Sample -->
+        <div id="gene-expression-sample-section" class="visualization-section" style="display: none;">
+            <hr>
+            <h2 class="text-primary">Gene Expression by Sample (Top {{ top_n }} Genes)</h2>
+            <p>Explore the hierarchical structure of gene expression across samples for the top {{ top_n }} genes.</p>
+            <div>
+                {% if sunburst_chart %}
+                    {{ sunburst_chart|safe }}
+                {% else %}
+                    {% if errors.sunburst_error %}
+                        <p class="text-danger">{{ errors.sunburst_error }}</p>
+                    {% else %}
+                        <p class="text-warning">No data available for sunburst chart visualization.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Heatmap Section -->
+        <div id="heatmap-section" class="visualization-section" style="display: none;">
+            <hr>
+            <h2 class="text-primary">Heatmap of Gene Expression</h2>
+            <p>Visualize expression levels of top {{ max_genes_heatmap }} genes across samples.</p>
+            <div>
+                {% if heatmap_fig %}
+                    {{ heatmap_fig|safe }}
+                {% else %}
+                    {% if errors.heatmap_error %}
+                        <p class="text-danger">{{ errors.heatmap_error }}</p>
+                    {% else %}
+                        <p class="text-warning">No data available for heatmap visualization.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Violin Plot Section -->
+        <div id="violin-plot-section" class="visualization-section" style="display: none;">
+            <hr>
+            <h2 class="text-primary">Violin Plot of Gene Expression</h2>
+            <p>Examine the distribution of gene expression levels across samples.</p>
+            <div>
+                {% if violin_fig %}
+                    {{ violin_fig|safe }}
+                {% else %}
+                    {% if errors.violin_error %}
+                        <p class="text-danger">{{ errors.violin_error }}</p>
+                    {% else %}
+                        <p class="text-warning">No data available for violin plot visualization.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Scatter Plot Section -->
+        <div id="scatter-plot-section" class="visualization-section" style="display: none;">
+            <hr>
+            <h2 class="text-primary">Scatter Plot of Gene Expression</h2>
+            <p>Compare gene expression between two samples.</p>
+
+            <form method="GET" class="form-inline mb-4">
+                <label for="sample_x" class="mr-2">Sample X:</label>
+                <select name="sample_x" id="sample_x" class="form-control mx-2">
+                    {% for sample in sample_columns %}
+                        <option value="{{ sample }}" {% if sample == sample_x %}selected{% endif %}>{{ sample }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="sample_y" class="mr-2">Sample Y:</label>
+                <select name="sample_y" id="sample_y" class="form-control mx-2">
+                    {% for sample in sample_columns %}
+                        <option value="{{ sample }}" {% if sample == sample_y %}selected{% endif %}>{{ sample }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- Include other GET parameters to preserve them -->
+                <input type="hidden" name="top_n" value="{{ top_n }}">
+
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+
+            <div>
+                {% if scatter_fig %}
+                    {{ scatter_fig|safe }}
+                {% else %}
+                    {% if errors.scatter_error %}
+                        <p class="text-danger">{{ errors.scatter_error }}</p>
+                    {% else %}
+                        <p class="text-warning">No data available for scatter plot visualization.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+  <!-- Include Plotly.js -->
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+
+<style>
+    .loading-spinner {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1050; /* Make sure it's above other elements */
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const checkboxes = document.querySelectorAll('#visualization-options-form input[type="checkbox"]');
+        const networkVisualizationInfo = document.getElementById('network-visualization-info');
+        const networkVisualizationButton = document.getElementById('go-network-visualization-btn');
+
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+
+        // Add event listener to each checkbox to toggle corresponding visualization section
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const sectionId = checkbox.value + '-section';
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.style.display = checkbox.checked ? 'block' : 'none';
+                }
+            });
+        });
+
+        document.getElementById('selected_option').addEventListener('change', function () {
+            const selectedOption = this.value;
+
+            const noDataMessage = document.getElementById("no-data-message");
+            const sunburstContainer = document.getElementById("immune-sunburst");
+            const sunburstHeader = document.getElementById("immune-sunburst-header");
+            const targetContainer = document.getElementById("target-container");
+            const defaultSunburstMessage = document.getElementById("default-sunburst-message");
+
+            // Show loading spinner
+            showLoading();
+
+            // Hide all elements initially
+            noDataMessage.style.display = "none";
+            sunburstContainer.style.display = "none";
+            sunburstHeader.style.display = "none";
+            targetContainer.style.display = "none";
+            if (defaultSunburstMessage) {
+                defaultSunburstMessage.style.display = "none";
+            }
+
+            // If the selected option is empty or a placeholder, show default message and hide spinner
+            if (!selectedOption || selectedOption === "-- Choose Pathway --") {
+                hideLoading();
+                if (defaultSunburstMessage) {
+                    defaultSunburstMessage.style.display = "block";
+                }
+                return;
+            }
+
+            // Define the valid options for showing Sunburst
+            const validOptions = ["PPAR signaling pathway", "Influenza A", "Salmonella infection"];
+
+            // Check if the selected option is valid for the Sunburst
+            if (validOptions.includes(selectedOption)) {
+                // Make an AJAX request to fetch Sunburst data
+                fetch("{% url 'fetch_sunburst_data' %}?selected_option=" + encodeURIComponent(selectedOption))
+                    .then(response => response.json())
+                    .then(data => {
+                        hideLoading();
+                        if (data.status === "success" && data.data) {
+                            // Prepare data for Plotly
+                            const sunburstData = data.data;
+
+                            // Render the Sunburst chart
+                            Plotly.newPlot('immune-sunburst', sunburstData.data, sunburstData.layout);
+
+                            // Show the Sunburst container, header, and target selection
+                            sunburstContainer.style.display = "block";
+                            sunburstHeader.style.display = "block";
+                            targetContainer.style.display = "block";
+                        } else {
+                            noDataMessage.style.display = "block";
+                            noDataMessage.innerHTML = data.message || 'No data found for the selected pathway.';
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error fetching Sunburst data:", error);
+                        hideLoading();
+                        noDataMessage.style.display = "block";
+                        noDataMessage.innerHTML = 'An error occurred while fetching the Sunburst chart.';
+                    });
+            } else {
+                hideLoading();
+                // If the selected option is not a valid pathway, display a pending message
+                noDataMessage.style.display = "block";
+                noDataMessage.innerHTML = 'Pending data load for the selected pathway.';
+            }
+        });
+
+        document.getElementById('selected_target').addEventListener('change', function () {
+            const selectedTarget = this.value;
+
+            const targetGeneMapping = {
+                "Target A": "ENSGALG00010028914",
+                "Target B": "ENSGALG00010027917",
+                "-- Choose Target --": "" // Add more genes as required
+            };
+
+            const highlightedGene = targetGeneMapping[selectedTarget];
+
+            // Show loading spinner
+            showLoading();
+
+            // Fetch the Sunburst data with the highlighted gene
+            const selectedOption = document.getElementById('selected_option').value;
+
+            fetch("{% url 'fetch_sunburst_data' %}?selected_option=" + encodeURIComponent(selectedOption))
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.status === "success" && data.data) {
+                        // Prepare data for Plotly
+                        const sunburstData = data.data;
+
+                        // Update colors to highlight the selected gene
+                        if (highlightedGene) {
+                            sunburstData.data[0].marker = {
+                                colors: sunburstData.data[0].labels.map(function (label) {
+                                    return label === highlightedGene ? "#FF0000" : "#63cdda"; // Red for highlight, original color otherwise
+                                })
+                            };
+                        }
+
+                        // Re-render the Sunburst chart with the highlighted gene
+                        Plotly.newPlot('immune-sunburst', sunburstData.data, sunburstData.layout);
+                    } else {
+                        console.error("Error updating Sunburst chart with highlighted gene.");
+                    }
+
+                    // Show/hide network visualization info and button based on selected target
+                    if (selectedTarget === "Target A") {
+                        networkVisualizationInfo.style.display = "block";
+                        networkVisualizationButton.style.display = "block";
+                    } else {
+                        networkVisualizationInfo.style.display = "none";
+                        networkVisualizationButton.style.display = "none";
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching Sunburst data:", error);
+                    hideLoading();
+                });
+        });
+
+        // Event listener for the "Go to Network Visualization" button
+       networkVisualizationButton.addEventListener('click', function () {
+    // Replace 'YOUR_DASH_APP_URL' with the actual URL to your Dash app
+    const dashAppUrl = "http://127.0.0.1:8050/";
+    window.open(dashAppUrl, "_blank");
+});
+
+    });
+</script>
+
+<div class="text-center mt-4">
+        <a href="{% url 'isabrown_detail' %}" class="btn btn-secondary">Back to IsaBrown Tissue Selection</a>
+    </div>
+
+{% endblock %}

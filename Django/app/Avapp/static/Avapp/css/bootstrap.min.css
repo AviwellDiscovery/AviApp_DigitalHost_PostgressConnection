@@ -1,0 +1,296 @@
+/* Spinner Styling */
+#loading-spinner {
+  display: none;  /* Hidden by default */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1055;
+  font-size: 30px;
+  color: #49d2b4;
+}
+
+/* Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #49d2b4;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+/* Navbar Styling */
+.navbar {
+  background-color: #c6e676;  /* Default color */
+  z-index: 1050;  /* Ensure the navbar is above other content */
+}
+
+/* Transparent background for the collapsed navbar */
+.navbar-collapse {
+  background-color: transparent !important;  /* Ensure it's transparent when collapsed */
+  z-index: 1050;  /* Ensure the navbar is above other content */
+}
+
+/* Apply background color only when navbar is expanded */
+.navbar-collapse.show {
+  background-color: #c6e676 !important;  /* Background color when expanded */
+  z-index: 1050;  /* Ensure the navbar is above other content */
+}
+
+/* The toggler button */
+.navbar-toggler {
+  z-index: 1052;  /* Ensure the toggler button is always on top */
+}
+
+/* Navbar items */
+.navbar-nav .nav-item {
+  background-color: transparent;  /* Transparent background by default */
+  position: relative;  /* For positioning the hover effects */
+  z-index: 1050;  /* Ensure the items stay on top */
+}
+
+/* Apply hover effects on nav items */
+.navbar-nav .nav-item:hover {
+  background-color: #49d2b4; /* Hover effect background color */
+  border-radius: 8px;  /* Round corners for hover */
+  transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;  /* Smooth transition */
+}
+
+/* Remove scaling to avoid layout shifts */
+.navbar-nav .nav-item:hover .nav-link {
+  color: #ffffff;  /* Change text color */
+  position: relative;
+  display: inline-block;
+}
+
+/* Stylish underline animation on hover */
+.navbar-nav .nav-item .nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 50%;
+  background-color: #ffffff;
+  transition: width 0.3s ease, left 0.3s ease;
+}
+
+.navbar-nav .nav-item:hover .nav-link::after {
+  width: 100%;
+  left: 0;
+}
+
+/* Navbar link text color */
+.navbar-nav .nav-link {
+  color: #393737; /* Default text color */
+  text-decoration: none;
+  padding: 8px 12px;
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+/* Navbar link hover color */
+.navbar-nav .nav-link:hover {
+  background-color: transparent;
+  color: #ffffff;  /* White color on hover */
+  transform: translateY(-3px);  /* Slight lift effect on hover */
+  transition: transform 0.3s ease-in-out;  /* Smooth hover transition */
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  background-color: #ffffff !important;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+/* Hover effect on dropdown items */
+.dropdown-item {
+  color: #393737 !important;
+  background-color: #ffffff !important;
+  border-radius: 6px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #49d2b4 !important;
+  color: #ffffff !important;
+}
+
+.dropdown-item.active {
+  color: #393737 !important;
+  background-color: #ffffff !important;
+}
+
+/* Apply background to navbar when collapsed (hamburger menu) */
+.navbar-toggler.collapsed + .navbar-collapse {
+  background-color: transparent !important; /* Set transparent background when collapsed */
+}
+
+/* Remove any potential layout shifts */
+.navbar-nav .nav-item, .navbar-nav .nav-link {
+  transition: none !important; /* Disable transition for layout-affecting properties */
+}
+
+.navbar-nav .nav-item:hover {
+  background-color: #49d2b4 !important;
+  transform: none !important; /* Disable transform effect to prevent movement */
+}
+
+/* Navbar Background and Text Styling */
+nav {
+  background-image: url('banner.png');
+  background-size: cover;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Navbar Menu Items */
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+nav li {
+  margin: 0 10px;
+}
+
+nav a {
+  display: block;
+  padding: 5px 20px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 4px;
+  transition: all 0.2s ease-in-out;
+}
+
+nav a:hover {
+  background-color: #49d2b4; /* Light green background on hover */
+  color: #ffffff; /* White text on hover */
+}
+
+.nav-item.active .nav-link {
+  background-color: #49d2b4 !important; /* Light green background for active item */
+  color: white !important;  /* White text for active item */
+}
+
+/* Dropdown Menu Styling */
+.dropdown-menu {
+  background-color: #ffffff !important;
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.dropdown-item {
+  color: #393737 !important;
+  background-color: #ffffff !important;
+  border-radius: 6px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.dropdown-item:hover {
+  background-color: #49d2b4 !important;
+  color: #49d2b4 !important;
+}
+
+.dropdown-item.active {
+  color: #393737 !important;
+  background-color: #ffffff !important;
+}
+
+/* Table Styling */
+.table {
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  border-collapse: collapse;
+  margin: 0 auto;
+  padding: 8px;
+}
+
+.table th, .table td {
+  padding: 10px;
+  text-align: center;
+}
+
+.table thead {
+  background-color: #f9f9f9;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.table-bordered {
+  border: 1px solid #ccc;
+}
+
+.table-striped tbody tr:nth-child(odd) {
+  background-color: #fff;
+}
+
+/* Button Styling */
+.btn-primary {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+.btn-primary-download {
+  position: fixed;
+  bottom: 48px;
+  right: 20px;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-primary-viz {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+}
+
+/* Taxonomy Cell Styling */
+.tax-cell {
+  max-height: 1.2em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  position: absolute;
+}
+
+.tax-cell:hover {
+  max-height: none;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: initial;
+}
+
+.taxonomy-line {
+  margin-bottom: 5px;
+}

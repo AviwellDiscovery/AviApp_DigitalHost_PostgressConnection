@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="schema-page">
+
+  <header class="schema-header">
+    <div>
+      <h1>Database Schema</h1>
+      <p class="schema-subtitle">
+        Choose an overview for quick understanding, or the detailed schema for implementation-level relationships.
+      </p>
+    </div>
+
+    <div class="schema-actions">
+      <a class="btn" href="{% static 'Avapp/schema_mint.png' %}" download>Download overview</a>
+      <a class="btn btn-outline" href="{% static 'Avapp/schema0506.png' %}" download>Download detailed</a>
+    </div>
+  </header>
+
+  <section class="schema-toolbar">
+    <div class="tabs" role="tablist" aria-label="Schema tabs">
+      <button class="tab active" role="tab" aria-selected="true" data-target="#overview">
+        Overview
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-target="#detailed">
+        Detailed
+      </button>
+    </div>
+
+    <div class="hint">
+      Tip: click the image to zoom. Use the mouse wheel / trackpad to scroll while zoomed.
+    </div>
+  </section>
+
+  <section id="overview" class="schema-panel active" role="tabpanel">
+    <div class="schema-card">
+      <div class="schema-card-head">
+        <div>
+          <h2>Overview (métier)</h2>
+          <p>High-level tables and relationships</p>
+        </div>
+        <div class="schema-card-actions">
+          <a class="btn btn-small" href="{% static 'Avapp/schema_mint.png' %}" target="_blank">Open</a>
+          <a class="btn btn-small btn-outline" href="{% static 'Avapp/schema_mint.png' %}" download>Download</a>
+        </div>
+      </div>
+
+      <figure class="schema-figure">
+        <img
+          class="schema-img"
+          src="{% static 'Avapp/schema_mint.png' %}"
+          alt="Database schema overview"
+          data-zoom-src="{% static 'Avapp/schema_mint.png' %}"
+        >
+      </figure>
+    </div>
+  </section>
+
+  <section id="detailed" class="schema-panel" role="tabpanel">
+    <div class="schema-card">
+      <div class="schema-card-head">
+        <div>
+          <h2>Detailed schema</h2>
+          <p>Full ERD including fields (development/debugging)</p>
+        </div>
+        <div class="schema-card-actions">
+          <a class="btn btn-small" href="{% static 'Avapp/schema0506.png' %}" target="_blank">Open</a>
+          <a class="btn btn-small btn-outline" href="{% static 'Avapp/schema0506.png' %}" download>Download</a>
+        </div>
+      </div>
+
+      <figure class="schema-figure">
+        <img
+          class="schema-img"
+          src="{% static 'Avapp/schema0506.png' %}"
+          alt="Database schema detailed"
+          data-zoom-src="{% static 'Avapp/schema0506.png' %}"
+        >
+      </figure>
+    </div>
+  </section>
+
+</div>
+
+<!-- Zoom modal -->
+<div class="zoom-modal" id="zoomModal" aria-hidden="true">
+  <div class="zoom-backdrop" data-close></div>
+  <div class="zoom-content" role="dialog" aria-modal="true" aria-label="Zoomed schema">
+    <button class="zoom-close" type="button" data-close aria-label="Close">×</button>
+    <img id="zoomImg" alt="Zoomed schema">
+  </div>
+</div>
+
+<style>
+  .schema-page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .schema-header { display:flex; gap:16px; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
+  .schema-header h1 { margin:0; font-size: 28px; }
+  .schema-subtitle { margin: 6px 0 0 0; opacity: .75; }
+  .schema-actions { display:flex; gap:10px; flex-wrap:wrap; }
+
+  .schema-toolbar { display:flex; gap:16px; align-items:center; justify-content:space-between; margin: 14px 0 18px; flex-wrap:wrap;}
+  .tabs { display:flex; gap:8px; padding:6px; background: rgba(0,0,0,.04); border-radius: 12px; }
+  .tab { border:0; padding:10px 12px; border-radius: 10px; background: transparent; cursor:pointer; font-weight:600; }
+  .tab.active { background: white; box-shadow: 0 1px 8px rgba(0,0,0,.08); }
+  .hint { opacity: .7; font-size: 14px; }
+
+  .schema-panel { display:none; }
+  .schema-panel.active { display:block; }
+
+  .schema-card { background: white; border: 1px solid rgba(0,0,0,.08); border-radius: 16px; overflow:hidden; }
+  .schema-card-head { padding: 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; border-bottom: 1px solid rgba(0,0,0,.06); }
+  .schema-card-head h2 { margin:0; font-size: 18px; }
+  .schema-card-head p { margin: 6px 0 0 0; opacity: .75; }
+  .schema-card-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  .schema-figure { margin:0; padding: 16px; }
+  .schema-img { width: 100%; height:auto; border-radius: 12px; cursor: zoom-in; border: 1px solid rgba(0,0,0,.06); background: #fff; }
+
+  .btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 12px; border-radius: 12px; text-decoration:none; border: 1px solid transparent; background: #78C143; color: white; font-weight: 700; }
+  .btn-outline { background: transparent; border-color: rgba(0,0,0,.18); color: #1f2937; }
+  .btn-small { padding:8px 10px; border-radius: 10px; font-weight: 700; font-size: 13px; }
+
+  /* Zoom modal */
+  .zoom-modal { position: fixed; inset: 0; display:none; }
+  .zoom-modal.open { display:block; }
+  .zoom-backdrop { position:absolute; inset:0; background: rgba(0,0,0,.65); }
+  .zoom-content { position:relative; margin: 4vh auto; max-width: 92vw; max-height: 92vh; background: white; border-radius: 16px; overflow:auto; padding: 12px; }
+  .zoom-content img { width: 100%; height:auto; display:block; }
+  .zoom-close { position: sticky; top: 0; float:right; border:0; background: rgba(0,0,0,.06); width: 40px; height:40px; border-radius: 12px; cursor:pointer; font-size: 22px; }
+</style>
+
+<script>
+  // Tabs
+  const tabs = document.querySelectorAll(".tab");
+  const panels = document.querySelectorAll(".schema-panel");
+  tabs.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabs.forEach(t => { t.classList.remove("active"); t.setAttribute("aria-selected", "false"); });
+      panels.forEach(p => p.classList.remove("active"));
+
+      btn.classList.add("active");
+      btn.setAttribute("aria-selected", "true");
+      document.querySelector(btn.dataset.target).classList.add("active");
+    });
+  });
+
+  // Zoom modal
+  const modal = document.getElementById("zoomModal");
+  const zoomImg = document.getElementById("zoomImg");
+
+  document.querySelectorAll(".schema-img").forEach(img => {
+    img.addEventListener("click", () => {
+      zoomImg.src = img.dataset.zoomSrc || img.src;
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+    });
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target.hasAttribute("data-close")) {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      zoomImg.src = "";
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("open")) {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      zoomImg.src = "";
+    }
+  });
+</script>
+{% endblock %}
+

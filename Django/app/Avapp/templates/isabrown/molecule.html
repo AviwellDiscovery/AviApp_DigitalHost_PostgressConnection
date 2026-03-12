@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+<div class="container mt-5">
+    <h1 class="text-center">{{ data_type }} Data Analysis for {{ host_type }}</h1>
+    <p class="text-center">{{ description }}</p>
+
+    <!-- Top Samples Section -->
+    <div id="top-samples" class="mt-4">
+        <h3 class="text-center">Top {{ top_n }} Samples by Peak Area</h3>
+        <div id="top-samples-plot">
+            {{ top_samples_plot|safe }}
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- MS-Omics ID Selection -->
+    <div class="mt-5">
+        <h3 class="text-center">Select MS-Omics ID for Composition Analysis</h3>
+
+        <form method="get" class="mb-4">
+            <label for="sunburst-ms-omics" class="form-label">Type or Select MS-Omics ID:</label>
+
+            <!-- Autocomplete Input -->
+            <input
+                list="msomics-options"
+                type="text"
+                name="sunburst_ms_omics"
+                id="sunburst-ms-omics"
+                class="form-control mb-3"
+                placeholder="Start typing an MS-Omics ID (e.g., SA069531)"
+                value="{{ selected_sunburst_id }}">
+
+            <!-- Datalist for Autocomplete -->
+            <datalist id="msomics-options">
+                {% for id in available_ids %}
+                    <option value="{{ id }}"></option>
+                {% endfor %}
+            </datalist>
+
+            <button type="submit" class="btn btn-primary mt-3">Analyze Composition</button>
+        </form>
+    </div>
+
+    <!-- Sunburst Chart -->
+    {% if sunburst_plot %}
+        <div class="mt-5">
+            <h3 class="text-center">Composition Sunburst Chart for {{ selected_sunburst_id }}</h3>
+            <div id="sunburst-plot">
+                {{ sunburst_plot|safe }}
+            </div>
+        </div>
+    {% else %}
+        {% if selected_sunburst_id %}
+            <p class="text-center text-danger">No data available for the selected MS-Omics ID: {{ selected_sunburst_id }}</p>
+        {% endif %}
+    {% endif %}
+</div>
+<div class="text-center mt-4">
+        <a href="{% url 'isabrown_detail' %}" class="btn btn-secondary">Back to IsaBrown Tissue Selection</a>
+    </div>
+{% endblock %}

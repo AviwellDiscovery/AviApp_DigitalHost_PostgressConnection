@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block block-body-content %}
+{% load static %}
+{% load my_filters %}
+
+<title>{{ host_type|title }} Data Analysis</title>
+
+{% if host_type == "chicken" %}
+<div class="container mt-5">
+    <h1 class="text-center">{{ host_type|title }} Data Analysis</h1>
+    <p class="text-center">Explore detailed data and insights for {{ host_type }}.</p>
+
+{% else %}
+<!-- Default Overview for Other Host Types -->
+<div class="container mt-5">
+    <h1 class="text-center">{{ host_type|title }} Data Analysis</h1>
+    <p class="text-center">Explore detailed data and insights for {{ host_type }}.</p>
+
+    <div class="row mt-4">
+        <!-- Host Image and Description -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <img src="{% static 'Avapp/images/{{ host_type }}.png' %}" class="card-img-top" alt="{{ host_type|title }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ host_type|title }} Overview</h5>
+                    <p class="card-text">
+                        Here you will find the detailed analysis, datasets, and insights for {{ host_type }}.
+                        Click on the links below to explore various options for {{ host_type }}.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Host Analysis Options -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Analysis Options</h5>
+                    <ul>
+                        <li><a href="#">Genomic Data</a></li>
+                        <li><a href="#">Taxonomic Insights</a></li>
+                        <li><a href="#">Health Data</a></li>
+                        <li><a href="#">Environmental Impact</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'DigitalHost' %}" class="btn btn-secondary">Back to Digital Host Selection</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
