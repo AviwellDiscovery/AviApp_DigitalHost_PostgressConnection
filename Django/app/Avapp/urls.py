@@ -5,7 +5,7 @@ from .views import plot, graph_view, download_csv, custom_login, custom_logout, 
     process_data_functionnal2, ensembl_id_lookup, process_databacteryv2, process_dataliverv2, molecule_data_analysisv2, \
     ileum_data_analysisv2, bacterien_data_analysisv2, host_detail, get_features_by_study, filter_data_by_feature, \
     filter_data_by_features, muscle_data_analysis, liver_data_analysis, ross_muscle_data_analysis, ileum_data_analysis, \
-    process_data_scfa2 , bacterien_data_analysisv2_ross, muscle_data_analysisv2_ross
+    process_data_scfa2 , bacterien_data_analysisv2_ross, muscle_data_analysisv2_ross, nk_network_api, nk_network_seeds
 from . import views
 from django.contrib.auth.views import LoginView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -99,6 +99,10 @@ urlpatterns = [
     path('shiny_dashboard/', views.shiny_dashboard, name='shiny_dashboard'),
     path('session_key/', views.generate_session_key, name='session_key'),
     path('generate_token/', views.generate_token, name='generate_token'),
+
+    # Nk Network Multiomic API
+    path('nk-network/api/', nk_network_api, name='nk_network_api'),
+    path('nk-network/seeds/', nk_network_seeds, name='nk_network_seeds'),
 
 ]
 

@@ -252,6 +252,75 @@
   </div>
 </div>
 
+<!-- Nk Network Multiomic Section -->
+<div id="nkNetworkSection" class="interactive-container" style="display: none;">
+  <div class="section-head">
+    <p class="section-title">Nk Network Multiomic</p>
+    <div class="section-sub">Explore correlation networks using the selected variable as seed.</div>
+    <div class="section-accent"></div>
+  </div>
+
+  <!-- Network Parameters -->
+  <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+      <div>
+        <label><strong>Seed ID:</strong></label>
+        <input type="text" id="nkSeedId" placeholder="Enter variable ID" style="padding: 8px; width: 200px; margin-left: 5px;">
+      </div>
+      <div>
+        <label><strong>Top K:</strong></label>
+        <input type="number" id="nkTopK" value="5" min="1" max="20" style="padding: 8px; width: 70px; margin-left: 5px;">
+      </div>
+      <div>
+        <label><strong>Depth (KN):</strong></label>
+        <input type="number" id="nkMaxDepth" value="3" min="1" max="10" style="padding: 8px; width: 70px; margin-left: 5px;">
+      </div>
+      <div>
+        <label><strong>Min |Corr|:</strong></label>
+        <input type="number" id="nkAbsThreshold" value="0" min="0" max="1" step="0.1" style="padding: 8px; width: 70px; margin-left: 5px;">
+      </div>
+      <div>
+        <label><strong>Min Accuracy:</strong></label>
+        <input type="number" id="nkAccuracyMin" value="0" min="0" max="1" step="0.01" style="padding: 8px; width: 70px; margin-left: 5px;">
+      </div>
+      <div>
+        <label><strong>Allowed Tissues:</strong></label>
+        <select id="nkAllowedTissues" multiple style="padding: 8px; width: 150px; margin-left: 5px; height: 80px;">
+          <option value="otu" selected>OTU</option>
+          <option value="ileum" selected>Ileum</option>
+          <option value="muscle" selected>Muscle</option>
+          <option value="liver" selected>Liver</option>
+          <option value="metab" selected>Metabolomic</option>
+        </select>
+      </div>
+      <div>
+        <button id="nkBuildNetworkBtn" class="choice-btn btn-specific" style="padding: 10px 20px; font-size: 1em; margin-left: 10px;">Build Network</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Network Stats -->
+  <div id="nkNetworkStats" style="margin: 10px 0; font-size: 0.9em; color: #666;"></div>
+
+  <!-- Cytoscape Network Container -->
+  <div id="nkCytoContainer" style="width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa;">
+    <div id="nkCytoNetwork" style="width: 100%; height: 100%;"></div>
+  </div>
+
+  <!-- Layout Controls -->
+  <div style="margin: 15px 0; display: flex; gap: 10px; align-items: center;">
+    <label><strong>Layout:</strong></label>
+    <select id="nkLayoutSelect" style="padding: 8px;">
+      <option value="cose">Force Directed (cose)</option>
+      <option value="breadthfirst">Hierarchical</option>
+      <option value="concentric">Concentric</option>
+      <option value="grid">Grid</option>
+      <option value="circle">Circle</option>
+    </select>
+    <button id="nkRunLayoutBtn" class="choice-btn" style="padding: 8px 15px;">Apply Layout</button>
+  </div>
+</div>
+
 <!-- Explore Section -->
 <div id="exploreSection" class="section interactive-container">
   <button class="back-btn-right" id="backFromFullInterface">Back</button>
@@ -356,6 +425,8 @@
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape-cose-bilkent/4.1.0/cytoscape-cose-bilkent.min.js"></script>
 
 <script>
   // On load
@@ -703,5 +774,189 @@
     })
     .catch(err => { $("#spinner").hide(); console.error(err); alert("Failed to filter data."); });
   });
+});
+
+
+// =============================================================================
+// Nk Network Multiomic - Cytoscape Network Visualization
+// =============================================================================
+
+const nkTissueColors = {
+  'otu': '#1f77b4',
+  'ileum': '#2ca02c',
+  'muscle': '#ff7f0e',
+  'liver': '#d62728',
+  'metab': '#9467bd',
+  'unknown': '#333333'
+};
+
+let nkCytoInstance = null;
+
+const nkSection = document.getElementById('nkNetworkSection');
+const omicsSelect = document.getElementById('omicsChoice');
+const nkSeedInput = document.getElementById('nkSeedId');
+const nkBuildBtn = document.getElementById('nkBuildNetworkBtn');
+
+if (omicsSelect) {
+  omicsSelect.addEventListener('change', function() {
+    const selectedOmics = this.value;
+    const tissueMap = {
+      'otu': 'otu',
+      'ileum': 'ileum',
+      'muscle': 'muscle',
+      'liver': 'liver',
+      'metab': 'metab',
+      'acid': 'metab',
+      'functionnal': 'metab'
+    };
+
+    if (nkSection) {
+      nkSection.style.display = 'block';
+    }
+  });
+}
+
+if (nkBuildBtn) {
+  nkBuildBtn.addEventListener('click', function() {
+    const seedId = nkSeedInput.value.trim();
+    if (!seedId) {
+      alert('Please enter a Seed ID');
+      return;
+    }
+
+    const tissue = omicsSelect ? omicsSelect.value : 'muscle';
+    const topK = parseInt(document.getElementById('nkTopK').value) || 5;
+    const maxDepth = parseInt(document.getElementById('nkMaxDepth').value) || 3;
+    const absThreshold = parseFloat(document.getElementById('nkAbsThreshold').value) || 0;
+    const accuracyMin = parseFloat(document.getElementById('nkAccuracyMin').value) || 0;
+
+    const allowedTissuesSelect = document.getElementById('nkAllowedTissues');
+    const allowedTissues = [];
+    if (allowedTissuesSelect) {
+      for (let option of allowedTissuesSelect.selectedOptions) {
+        allowedTissues.push(option.value);
+      }
+    }
+
+    $("#spinner").show();
+
+    const params = new URLSearchParams({
+      seed_id: seedId,
+      tissue: tissue,
+      top_k: topK,
+      max_depth: maxDepth,
+      abs_threshold: absThreshold,
+      accuracy_min: accuracyMin
+    });
+
+    allowedTissues.forEach(t => params.append('allowed_tissues', t));
+
+    fetch(`/nk-network/api/?${params.toString()}`)
+      .then(response => response.json())
+      .then(data => {
+        $("#spinner").hide();
+
+        if (data.error) {
+          alert('Error: ' + data.error);
+          return;
+        }
+
+        const statsDiv = document.getElementById('nkNetworkStats');
+        if (statsDiv) {
+          statsDiv.innerHTML = `<strong>Network Stats:</strong> ${data.stats.node_count} nodes, ${data.stats.edge_count} edges`;
+        }
+
+        renderNkNetwork(data.elements);
+      })
+      .catch(err => {
+        $("#spinner").hide();
+        console.error(err);
+        alert('Failed to build network: ' + err.message);
+      });
+  });
+}
+
+function renderNkNetwork(elements) {
+  if (nkCytoInstance) {
+    nkCytoInstance.destroy();
+    nkCytoInstance = null;
+  }
+
+  const container = document.getElementById('nkCytoNetwork');
+  if (!container) return;
+
+  const style = [
+    {
+      selector: 'node',
+      style: {
+        'background-color': 'data(color)',
+        'label': 'data(label)',
+        'color': '#333',
+        'font-size': '10px',
+        'text-valign': 'bottom',
+        'text-halign': 'center',
+        'width': 30,
+        'height': 30
+      }
+    },
+    {
+      selector: 'edge',
+      style: {
+        'width': 'data(abs_corr) * 10',
+        'line-color': 'data(edge_color)',
+        'target-arrow-color': 'data(edge_color)',
+        'target-arrow-shape': 'triangle',
+        'opacity': 0.8
+      }
+    },
+    {
+      selector: ':selected',
+      style: {
+        'border-width': 2,
+        'border-color': '#000'
+      }
+    }
+  ];
+
+  nkCytoInstance = cytoscape({
+    container: container,
+    elements: elements,
+    style: style,
+    layout: {
+      name: 'cose',
+      animate: true,
+      animationDuration: 500
+    },
+    minZoom: 0.1,
+    maxZoom: 10
+  });
+
+  nkCytoInstance.on('tap', 'edge', function(evt) {
+    const edge = evt.target;
+    const data = edge.data();
+    alert(`Correlation: ${data.correlation.toFixed(4)}\nAccuracy: ${data.accuracy.toFixed(4)}\nLevel: ${data.level}`);
+  });
+
+  nkCytoInstance.on('tap', 'node', function(evt) {
+    const node = evt.target;
+    const data = node.data();
+    alert(`Node: ${data.id}\nTissue: ${data.tissue}\nLayer: ${data.layer}`);
+  });
+}
+
+const nkLayoutBtn = document.getElementById('nkRunLayoutBtn');
+if (nkLayoutBtn) {
+  nkLayoutBtn.addEventListener('click', function() {
+    if (!nkCytoInstance) return;
+
+    const layoutName = document.getElementById('nkLayoutSelect').value;
+    const layout = nkCytoInstance.layout({
+      name: layoutName,
+      animate: true,
+      animationDuration: 500
+    });
+    layout.run();
+  });
+}
 </script>
 {% endblock %}

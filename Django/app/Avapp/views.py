@@ -88,6 +88,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.authtoken.models import Token
 from .models import Featurefacttable, Host, Feature, MetabCorrelation, AcidCorrelation
 from django.shortcuts import render
+
+# Nk Network imports
+import time
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 from django.http import HttpResponseRedirect
 import random
 import string
@@ -12847,3 +12852,290 @@ def my_view(request):
     else:
         form = MyForm()
     return render(request, 'data_form.html', {'form': form})
+
+
+# =============================================================================
+# Nk Network Multiomic - Graph Building Logic
+# =============================================================================
+
+# Database configuration
+def get_nk_network_engine():
+    """Get SQLAlchemy engine for Nk Network database connection."""
+    db_name = os.environ.get('DB_NAME', 'devdatabase_16_11')
+    db_user = os.environ.get('DB_USER', 'reda')
+    db_password = os.environ.get('DB_PASSWORD', '1321')
+    db_host = os.environ.get('DB_HOST', 'localhost')
+    db_port = os.environ.get('DB_PORT', '5432')
+    db_url = f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+    return create_engine(db_url, pool_pre_ping=True)
+
+
+# Tissue to table mapping
+TISSUE_TABLE_MAP = {
+    'otu': 'avapp_tissuecorrelation_otu',
+    'ileum': 'avapp_tissuecorrelation',
+    'muscle': 'avapp_tissuecorrelation_muscle',
+    'liver': 'avapp_tissuecorrelation_liver',
+    'metab': 'avapp_tissuecorrelation_metab',
+}
+
+# Tissue colors for visualization
+TISSUE_COLORS = {
+    'otu': '#1f77b4',
+    'ileum': '#2ca02c',
+    'muscle': '#ff7f0e',
+    'liver': '#d62728',
+    'metab': '#9467bd',
+}
+
+
+def fetch_seed_candidates_nk(tissue, limit=10000):
+    """Fetch seed candidates for a given tissue."""
+    engine = get_nk_network_engine()
+    table = TISSUE_TABLE_MAP.get(tissue, 'avapp_tissuecorrelation')
+
+    if table == 'avapp_tissuecorrelation':
+        mv = 'public.mv_seed_ileum'
+    elif table == 'avapp_tissuecorrelation_muscle':
+        mv = 'public.mv_seed_muscle'
+    elif table == 'avapp_tissuecorrelation_liver':
+        mv = 'public.mv_seed_liver'
+    else:
+        q = text(f"""
+            SELECT DISTINCT var2
+            FROM {table}
+            WHERE var2 IS NOT NULL
+            ORDER BY var2
+            LIMIT :lim
+        """)
+        with engine.connect() as conn:
+            rows = conn.execute(q, {"lim": limit}).fetchall()
+        return [r[0] for r in rows]
+
+    q = text(f"""
+        SELECT var2
+        FROM {mv}
+        ORDER BY var2
+        LIMIT :lim
+    """)
+
+    with engine.connect() as conn:
+        rows = conn.execute(q, {"lim": limit}).fetchall()
+
+    return [r[0] for r in rows]
+
+
+def fetch_neighbors_nk(seed_id, tissue, allowed_tissues, top_k=5, abs_threshold=0.0,
+                        corr_min=-5, corr_max=5, accuracy_min=0.0):
+    """Fetch neighbors for a seed variable with monotone constraint."""
+    engine = get_nk_network_engine()
+    table = TISSUE_TABLE_MAP.get(tissue, 'avapp_tissuecorrelation')
+
+    # Build allowed tissues filter
+    if allowed_tissues:
+        tissue_filter = f"AND t.to_tissue IN ({','.join([f"'{t}'" for t in allowed_tissues])})"
+    else:
+        tissue_filter = ""
+
+    q = text(f"""
+        SELECT
+            t.var1 AS neighbor_id,
+            t.correlation,
+            t.accuracy,
+            t.to_tissue,
+            ABS(t.correlation) AS abs_corr
+        FROM {table} t
+        WHERE t.var2 = :seed_id
+            AND ABS(t.correlation) > :abs_thr
+            AND t.correlation >= :corr_min
+            AND t.correlation <= :corr_max
+            AND t.accuracy >= :acc_min
+            {tissue_filter}
+        ORDER BY abs_corr DESC
+        LIMIT :top_k
+    """)
+
+    params = {
+        "seed_id": seed_id,
+        "abs_thr": abs_threshold,
+        "corr_min": corr_min,
+        "corr_max": corr_max,
+        "acc_min": accuracy_min,
+        "top_k": top_k
+    }
+
+    with engine.connect() as conn:
+        rows = conn.execute(q, params).fetchall()
+
+    return [
+        {
+            'neighbor_id': r[0],
+            'correlation': r[1],
+            'accuracy': r[2],
+            'to_tissue': r[3],
+            'abs_corr': r[4]
+        }
+        for r in rows
+    ]
+
+
+def build_nk_graph(seed_id, tissue, allowed_tissues, top_k=5, max_depth=3,
+                   abs_threshold=0.0, corr_min=-5, corr_max=5, accuracy_min=0.0):
+    """Build monotone correlation graph."""
+    edges = []
+    nodes = {}
+    visited = set()
+    layer = 0
+
+    # Start with seed node
+    frontier = [(seed_id, tissue, 0.0)]  # (var_id, from_tissue, parent_abs_corr)
+
+    MAX_FRONTIER = 10000
+    MAX_EDGES = 100000
+
+    while frontier and layer < max_depth and len(edges) < MAX_EDGES:
+        next_frontier = []
+
+        for current_var, current_tissue, parent_abs in frontier:
+            if current_var in visited:
+                continue
+            visited.add(current_var)
+
+            # Add node if not exists
+            if current_var not in nodes:
+                nodes[current_var] = {
+                    'id': current_var,
+                    'label': current_var,
+                    'tissue': current_tissue,
+                    'layer': layer
+                }
+
+            # Fetch neighbors
+            neighbors = fetch_neighbors_nk(
+                current_var, current_tissue, allowed_tissues,
+                top_k, abs_threshold, corr_min, corr_max, accuracy_min
+            )
+
+            for n in neighbors:
+                neighbor_id = n['neighbor_id']
+                abs_corr = n['abs_corr']
+
+                # Monotone constraint: each level must have higher abs correlation
+                if abs_corr <= parent_abs and layer > 0:
+                    continue
+
+                # Add edge
+                edge_key = tuple(sorted([current_var, neighbor_id]))
+                if edge_key not in [(e['source'], e['target']) for e in edges]:
+                    edges.append({
+                        'source': current_var,
+                        'target': neighbor_id,
+                        'correlation': n['correlation'],
+                        'abs_corr': abs_corr,
+                        'accuracy': n['accuracy'],
+                        'level': layer + 1
+                    })
+
+                    # Add neighbor node
+                    if neighbor_id not in nodes:
+                        nodes[neighbor_id] = {
+                            'id': neighbor_id,
+                            'label': neighbor_id,
+                            'tissue': n['to_tissue'],
+                            'layer': layer + 1
+                        }
+
+                    if len(next_frontier) < MAX_FRONTIER:
+                        next_frontier.append((neighbor_id, n['to_tissue'], abs_corr))
+
+        frontier = next_frontier
+        layer += 1
+
+    return {'nodes': list(nodes.values()), 'edges': edges}
+
+
+def nodes_to_cytoscape(nodes, edges):
+    """Convert nodes and edges to Cytoscape.js format."""
+    cytoscape_nodes = []
+    for node in nodes:
+        tissue = node.get('tissue', 'unknown')
+        color = TISSUE_COLORS.get(tissue, '#333333')
+        cytoscape_nodes.append({
+            'data': {
+                'id': node['id'],
+                'label': node['label'][:30],  # Truncate long labels
+                'tissue': tissue,
+                'layer': node.get('layer', 0),
+                'color': color
+            }
+        })
+
+    cytoscape_edges = []
+    for edge in edges:
+        corr = edge['correlation']
+        abs_corr = abs(corr)
+        edge_color = '#2196F3' if corr > 0 else '#F44336'
+        cytoscape_edges.append({
+            'data': {
+                'source': edge['source'],
+                'target': edge['target'],
+                'correlation': corr,
+                'abs_corr': abs_corr,
+                'accuracy': edge.get('accuracy', 0),
+                'level': edge.get('level', 0),
+                'edge_color': edge_color
+            }
+        })
+
+    return cytoscape_nodes + cytoscape_edges
+
+
+@csrf_exempt
+def nk_network_api(request):
+    """API endpoint for Nk Network Multiomic graph data."""
+    if request.method == 'GET':
+        # Get parameters
+        seed_id = request.GET.get('seed_id', '')
+        tissue = request.GET.get('tissue', 'ileum')
+        allowed_tissues = request.GET.getlist('allowed_tissues')
+        top_k = int(request.GET.get('top_k', 5))
+        max_depth = int(request.GET.get('max_depth', 3))
+        abs_threshold = float(request.GET.get('abs_threshold', 0.0))
+        corr_min = float(request.GET.get('corr_min', -5))
+        corr_max = float(request.GET.get('corr_max', 5))
+        accuracy_min = float(request.GET.get('accuracy_min', 0.0))
+
+        if not seed_id:
+            return JsonResponse({'error': 'seed_id is required'}, status=400)
+
+        # Build graph
+        graph_data = build_nk_graph(
+            seed_id, tissue, allowed_tissues, top_k, max_depth,
+            abs_threshold, corr_min, corr_max, accuracy_min
+        )
+
+        # Convert to Cytoscape format
+        elements = nodes_to_cytoscape(graph_data['nodes'], graph_data['edges'])
+
+        return JsonResponse({
+            'elements': elements,
+            'stats': {
+                'node_count': len(graph_data['nodes']),
+                'edge_count': len(graph_data['edges'])
+            }
+        })
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def nk_network_seeds(request):
+    """API endpoint to get seed candidates for Nk Network."""
+    if request.method == 'GET':
+        tissue = request.GET.get('tissue', 'ileum')
+        limit = int(request.GET.get('limit', 1000))
+
+        seeds = fetch_seed_candidates_nk(tissue, limit)
+        return JsonResponse({'seeds': seeds[:limit]})
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
