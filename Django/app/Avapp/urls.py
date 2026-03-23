@@ -5,7 +5,8 @@ from .views import plot, graph_view, download_csv, custom_login, custom_logout, 
     process_data_functionnal2, ensembl_id_lookup, process_databacteryv2, process_dataliverv2, molecule_data_analysisv2, \
     ileum_data_analysisv2, bacterien_data_analysisv2, host_detail, get_features_by_study, filter_data_by_feature, \
     filter_data_by_features, muscle_data_analysis, liver_data_analysis, ross_muscle_data_analysis, ileum_data_analysis, \
-    process_data_scfa2 , bacterien_data_analysisv2_ross, muscle_data_analysisv2_ross, nk_network_api, nk_network_seeds
+    process_data_scfa2 , bacterien_data_analysisv2_ross, muscle_data_analysisv2_ross, \
+    nk_network_load_seeds, nk_network_build_graph
 from . import views
 from django.contrib.auth.views import LoginView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -51,6 +52,11 @@ urlpatterns = [
     path('<str:host_type>/bacterien/', views.bacterien_data_analysis, name='bacterien'),
  # molecule isabrown
     path('<str:host_type>/molecule/', views.molecule_data_analysis, name='molecule_data'),
+
+    # Nk Network Multiomic (must be before generic <host_type>/<data_type>/ routes)
+    path('nk-network/load-seeds/', nk_network_load_seeds, name='nk_network_load_seeds'),
+    path('nk-network/build-graph/', nk_network_build_graph, name='nk_network_build_graph'),
+
     path('<host_type>/<data_type>/', views.process_data, name='process_data'),
     # path('<host_type>/<data_type>/', views.process_datav2, name='process_data_ileumv2'),
     path('<host_type>/<data_type>/', views.process_datamusclev2, name='process_data_musclev2'),
@@ -99,10 +105,6 @@ urlpatterns = [
     path('shiny_dashboard/', views.shiny_dashboard, name='shiny_dashboard'),
     path('session_key/', views.generate_session_key, name='session_key'),
     path('generate_token/', views.generate_token, name='generate_token'),
-
-    # Nk Network Multiomic API
-    path('nk-network/api/', nk_network_api, name='nk_network_api'),
-    path('nk-network/seeds/', nk_network_seeds, name='nk_network_seeds'),
 
 ]
 

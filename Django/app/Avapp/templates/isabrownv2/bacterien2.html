@@ -376,6 +376,8 @@
     </div>
   </div>
 
+  {% include "isabrownv2/_nk_network_section.html" %}
+
   <!-- Table Filter Section -->
   <div id="tableFilterSection" class="interactive-container" style="display: none;">
     <div class="section-head">
@@ -906,4 +908,6 @@ document.addEventListener('plotly_afterplot', (e) => {
   });
 });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+<script src="{% static 'Avapp/js/isabrown_nk_network.js' %}"></script>
 {% endblock %}

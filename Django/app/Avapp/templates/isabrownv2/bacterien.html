@@ -271,7 +271,9 @@
         </div>
       </div>
 
-      <!-- Table Filter Section for Specific Query -->
+  {% include "isabrownv2/_nk_network_section.html" %}
+
+  <!-- Table Filter Section -->
       <div id="tableFilterSection" class="interactive-container" style="display: none;">
         <h3>Optimize Your Data Display</h3>
         <!-- Overview Statistics -->
@@ -482,6 +484,14 @@
       const omicsChoice = document.getElementById("omicsChoice");
       const bacteriaSearch = document.getElementById("bacteriaSearch");
       const omicsChoiceContainer = document.getElementById("omicsChoiceContainer");
+
+      // Enforce order: Sunburst MOFA-CC first, NK Network below it
+      const plotlySunburstViewTop = document.getElementById("plotlySunburstView");
+      const nkNetworkContainerTop = document.getElementById("nkNetworkContainer");
+      if (nkNetworkContainerTop && plotlySunburstViewTop) {
+        plotlySunburstViewTop.insertAdjacentElement("afterend", nkNetworkContainerTop);
+      }
+
       bacteriaSearch.addEventListener("input", function() {
         if (bacteriaSearch.value.trim() !== "") {
           omicsChoiceContainer.style.display = "block";
@@ -489,6 +499,7 @@
             document.getElementById("clusterLookupContainer").style.display = "block";
             document.getElementById("toggleSunburstContainer").style.display = "block";
             document.getElementById("tableFilterSection").style.display = "block";
+            document.getElementById("nkNetworkContainer").style.display = "block";
           }
         } else {
           omicsChoiceContainer.style.display = "none";
@@ -496,6 +507,7 @@
           document.getElementById("clusterResult").innerHTML = "";
           document.getElementById("toggleSunburstContainer").style.display = "none";
           document.getElementById("tableFilterSection").style.display = "none";
+          document.getElementById("nkNetworkContainer").style.display = "none";
         }
       });
 
@@ -504,10 +516,16 @@
           document.getElementById("clusterLookupContainer").style.display = "block";
           document.getElementById("toggleSunburstContainer").style.display = "block";
           document.getElementById("tableFilterSection").style.display = "block";
+          if (bacteriaSearch.value.trim() !== "") {
+            document.getElementById("nkNetworkContainer").style.display = "block";
+          } else {
+            document.getElementById("nkNetworkContainer").style.display = "none";
+          }
         } else {
           document.getElementById("clusterLookupContainer").style.display = "none";
           document.getElementById("toggleSunburstContainer").style.display = "none";
           document.getElementById("tableFilterSection").style.display = "none";
+          document.getElementById("nkNetworkContainer").style.display = "none";
         }
       });
 
@@ -847,4 +865,6 @@
         });
       });
     </script>
-  {% endblock %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+<script src="{% static 'Avapp/js/isabrown_nk_network.js' %}"></script>
+{% endblock %}
