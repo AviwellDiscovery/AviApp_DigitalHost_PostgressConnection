@@ -1,0 +1,107 @@
+<!-- Nk Network Multiomic -->
+<style>
+  #nkNetworkContainer:hover { transform: none !important; }
+  #nk_cytoscape_container {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-top: 15px;
+    z-index: 1;
+  }
+  #nk_cytoscape_container canvas {
+    display: block;
+  }
+</style>
+<div id="nkNetworkContainer" class="interactive-container" style="display: none; transform: none;">
+  <div class="section-head">
+    <h2 class="section-title">Nk Network Multiomic</h2>
+    <div class="section-sub">Default seed is the variable selected at the top of this page.</div>
+    <div class="section-accent"></div>
+  </div>
+
+  <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+    <div style="margin-bottom: 12px; font-weight: 600; color: #0f172a;">
+      Seed in use: <span id="nk_seed_info_text">Waiting for variable selection...</span>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-top: 15px;">
+      <div>
+        <label style="font-weight: 600; display: block; margin-bottom: 5px;">Allowed Tissues:</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <label><input type="checkbox" class="nk-allowed-tissue" value="ileum" checked> Ileum</label>
+          <label><input type="checkbox" class="nk-allowed-tissue" value="otu" checked> OTU</label>
+          <label><input type="checkbox" class="nk-allowed-tissue" value="muscle" checked> Muscle</label>
+          <label><input type="checkbox" class="nk-allowed-tissue" value="liver" checked> Liver</label>
+          <label><input type="checkbox" class="nk-allowed-tissue" value="metab" checked> Metabolic</label>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-top: 15px;">
+      <div>
+        <label style="font-weight: 600; display: block; margin-bottom: 5px;">TOP_K: <span id="nk_topk_val">5</span></label>
+        <input type="range" id="nk_topk" min="1" max="10" value="5" style="width: 120px;">
+      </div>
+      <div>
+        <label style="font-weight: 600; display: block; margin-bottom: 5px;">KN: <span id="nk_kn_val">3</span></label>
+        <input type="range" id="nk_kn" min="1" max="10" value="3" style="width: 120px;">
+      </div>
+      <div>
+        <label style="font-weight: 600; display: block; margin-bottom: 5px;">abs(corr) threshold: <span id="nk_absthr_val">0</span></label>
+        <input type="range" id="nk_absthr" min="0" max="1" step="0.01" value="0" style="width: 120px;">
+      </div>
+      <div>
+        <label style="font-weight: 600; display: block; margin-bottom: 5px;">accuracy >= <span id="nk_accmin_val">0</span></label>
+        <input type="range" id="nk_accmin" min="0" max="1" step="0.01" value="0" style="width: 120px;">
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-top: 15px;">
+      <div>
+        <label style="font-weight: 600; display: block; margin-bottom: 5px;">Layout:</label>
+        <select id="nk_layout" style="padding: 8px; width: 170px; border-radius: 4px; border: 1px solid #ddd;">
+          <option value="cose">cose (force-directed)</option>
+          <option value="breadthfirst">breadthfirst</option>
+          <option value="concentric">concentric</option>
+          <option value="grid">grid</option>
+          <option value="circle">circle</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-weight: 600; display: block; margin-bottom: 5px;">Search Node:</label>
+        <input type="text" id="nk_search_node" placeholder="tissue::id" style="padding: 8px; width: 170px; border-radius: 4px; border: 1px solid #ddd;">
+        <button id="nk_highlight_btn" style="padding: 8px 16px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">Highlight</button>
+      </div>
+      <div>
+        <button id="nk_build_btn" style="padding: 10px 24px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 1em; cursor: pointer; font-weight: 600;">Build Network</button>
+      </div>
+      <div>
+        <button id="nk_toggle_labels_btn" style="padding: 10px 16px; background: #475569; color: white; border: none; border-radius: 4px; font-size: 0.95em; cursor: pointer; font-weight: 600;">Hide Names</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="nk_network_stats" style="margin: 10px 0; padding: 10px; background: #e9ecef; border-radius: 4px; display: none;">
+    <strong>Network Stats:</strong> Nodes: <span id="nk_nodes_count">0</span>, Edges: <span id="nk_edges_count">0</span>
+  </div>
+
+  <div id="nk_loading" style="display: none; text-align: center; padding: 20px;">
+    <div style="color: #007bff; font-size: 1.2em;">Building network...</div>
+  </div>
+
+  <div id="nk_cytoscape_container" style="display: none;"></div>
+
+  <div id="nk_legend" style="margin-top: 10px; display: none;">
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.9em;">
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #1f77b4; border: 1px solid #333; border-radius: 2px; margin-right: 4px;"></span>OTU</span>
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #2ca02c; border: 1px solid #333; border-radius: 2px; margin-right: 4px;"></span>Ileum</span>
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #ff7f0e; border: 1px solid #333; border-radius: 2px; margin-right: 4px;"></span>Muscle</span>
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #d62728; border: 1px solid #333; border-radius: 2px; margin-right: 4px;"></span>Liver</span>
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #9467bd; border: 1px solid #333; border-radius: 2px; margin-right: 4px;"></span>Metabolic</span>
+    </div>
+  </div>
+</div>
